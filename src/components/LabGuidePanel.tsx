@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { labs } from '@/lib/labDefinitions';
 import { useSimulation } from '@/context/ISESimulationContext';
-import { CheckCircle, Circle, BookOpen, ChevronDown, ChevronRight, RotateCcw, X } from 'lucide-react';
+import { useWalkthrough } from '@/context/WalkthroughContext';
+import { CheckCircle, Circle, BookOpen, ChevronDown, ChevronRight, RotateCcw, X, Play, Navigation } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface LabGuidePanelProps {
@@ -11,6 +12,7 @@ interface LabGuidePanelProps {
 
 const LabGuidePanel = ({ open, onClose }: LabGuidePanelProps) => {
   const sim = useSimulation();
+  const wt = useWalkthrough();
   const [selectedLab, setSelectedLab] = useState<string | null>(null);
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
 
@@ -34,6 +36,19 @@ const LabGuidePanel = ({ open, onClose }: LabGuidePanelProps) => {
     if (!l) return 0;
     const completed = l.steps.filter(s => s.validation(sim)).length;
     return Math.round((completed / l.steps.length) * 100);
+  };
+
+  const handleStartWalkthrough = (labId: string) => {
+    wt.startWalkthrough(labId);
+    onClose();
+  };
+
+  const handleGoToStep = (labId: string, stepIndex: number) => {
+    if (!wt.active || wt.labId !== labId) {
+      wt.startWalkthrough(labId);
+    }
+    setTimeout(() => wt.goToStep(stepIndex), 100);
+    onClose();
   };
 
   return (
@@ -60,23 +75,32 @@ const LabGuidePanel = ({ open, onClose }: LabGuidePanelProps) => {
             {labs.map(l => {
               const progress = getLabProgress(l.id);
               return (
-                <button key={l.id} className="w-full text-left border border-border rounded p-3 hover:bg-accent/40 transition-colors" onClick={() => setSelectedLab(l.id)}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold" style={{ color: '#049fd9' }}>{l.title}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{
-                      background: l.difficulty === 'Beginner' ? '#6cc04a20' : l.difficulty === 'Intermediate' ? '#fbab1830' : '#cc000020',
-                      color: l.difficulty === 'Beginner' ? '#3d7a2a' : l.difficulty === 'Intermediate' ? '#b47a00' : '#cc0000'
-                    }}>{l.difficulty}</span>
-                  </div>
-                  <div className="text-[11px] mt-1" style={{ color: '#666' }}>{l.description}</div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="flex-1 h-1.5 rounded-full" style={{ background: '#e5e5e5' }}>
-                      <div className="h-1.5 rounded-full transition-all" style={{ width: `${progress}%`, background: progress === 100 ? '#6cc04a' : '#049fd9' }} />
+                <div key={l.id} className="border border-border rounded p-3 hover:bg-accent/40 transition-colors">
+                  <button className="w-full text-left" onClick={() => setSelectedLab(l.id)}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold" style={{ color: '#049fd9' }}>{l.title}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{
+                        background: l.difficulty === 'Beginner' ? '#6cc04a20' : l.difficulty === 'Intermediate' ? '#fbab1830' : '#cc000020',
+                        color: l.difficulty === 'Beginner' ? '#3d7a2a' : l.difficulty === 'Intermediate' ? '#b47a00' : '#cc0000'
+                      }}>{l.difficulty}</span>
                     </div>
-                    <span className="text-[10px] font-mono" style={{ color: '#888' }}>{progress}%</span>
-                  </div>
-                  <div className="text-[10px] mt-1" style={{ color: '#888' }}>⏱ {l.estimatedTime} • {l.steps.length} steps</div>
-                </button>
+                    <div className="text-[11px] mt-1" style={{ color: '#666' }}>{l.description}</div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex-1 h-1.5 rounded-full" style={{ background: '#e5e5e5' }}>
+                        <div className="h-1.5 rounded-full transition-all" style={{ width: `${progress}%`, background: progress === 100 ? '#6cc04a' : '#049fd9' }} />
+                      </div>
+                      <span className="text-[10px] font-mono" style={{ color: '#888' }}>{progress}%</span>
+                    </div>
+                    <div className="text-[10px] mt-1" style={{ color: '#888' }}>⏱ {l.estimatedTime} • {l.steps.length} steps</div>
+                  </button>
+                  <button
+                    className="w-full mt-2 flex items-center justify-center gap-1.5 text-[11px] px-3 py-1.5 rounded text-white font-medium transition-colors"
+                    style={{ background: '#6cc04a' }}
+                    onClick={() => handleStartWalkthrough(l.id)}
+                  >
+                    <Play size={11} /> Start Guided Walkthrough
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -86,7 +110,15 @@ const LabGuidePanel = ({ open, onClose }: LabGuidePanelProps) => {
               ← Back to Labs
             </button>
             <div className="text-xs font-semibold mb-1" style={{ color: '#333' }}>{lab.title}</div>
-            <div className="text-[11px] mb-3" style={{ color: '#666' }}>{lab.description}</div>
+            <div className="text-[11px] mb-2" style={{ color: '#666' }}>{lab.description}</div>
+
+            <button
+              className="w-full mb-3 flex items-center justify-center gap-1.5 text-[11px] px-3 py-1.5 rounded text-white font-medium"
+              style={{ background: '#6cc04a' }}
+              onClick={() => handleStartWalkthrough(lab.id)}
+            >
+              <Play size={11} /> Start Guided Walkthrough
+            </button>
 
             <div className="space-y-2">
               {lab.steps.map((step, i) => {
@@ -107,16 +139,36 @@ const LabGuidePanel = ({ open, onClose }: LabGuidePanelProps) => {
                     {isExpanded && (
                       <div className="px-3 pb-3 pt-1 border-t border-border">
                         <div className="text-[11px] mb-2" style={{ color: '#555' }}>{step.instruction}</div>
+                        {step.formFields && step.formFields.length > 0 && (
+                          <div className="text-[10px] mb-2 p-2 rounded" style={{ background: '#f0f8ff', border: '1px solid #049fd920' }}>
+                            <div className="font-semibold mb-1" style={{ color: '#049fd9' }}>Expected Values:</div>
+                            {step.formFields.map(f => (
+                              <div key={f.fieldId} className="flex gap-2">
+                                <span style={{ color: '#666' }}>{f.label}:</span>
+                                <span className="font-mono font-semibold" style={{ color: '#333' }}>{f.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         <div className="text-[10px] mb-2 p-2 rounded" style={{ background: '#f5f5f5', color: '#888' }}>
                           💡 Hint: {step.hint}
                         </div>
-                        <button
-                          className="text-[11px] px-3 py-1 rounded text-white"
-                          style={{ background: '#049fd9' }}
-                          onClick={() => checkStep(step.id)}
-                        >
-                          Validate Step
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            className="text-[11px] px-3 py-1 rounded text-white"
+                            style={{ background: '#049fd9' }}
+                            onClick={() => checkStep(step.id)}
+                          >
+                            Validate Step
+                          </button>
+                          <button
+                            className="text-[11px] px-3 py-1 rounded border border-border flex items-center gap-1 hover:bg-accent/30"
+                            style={{ color: '#049fd9' }}
+                            onClick={() => handleGoToStep(lab.id, i)}
+                          >
+                            <Navigation size={10} /> Go To Step
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SimulationProvider } from "@/context/ISESimulationContext";
+import { WalkthroughProvider } from "@/context/WalkthroughContext";
+import WalkthroughOverlay from "@/components/WalkthroughOverlay";
 import CiscoHeader from "@/components/CiscoHeader";
 import Index from "./pages/Index";
 import ContextVisibility from "./pages/ContextVisibility";
@@ -24,22 +26,25 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="min-h-screen flex flex-col bg-background">
-            <CiscoHeader />
-            <main className="flex-1 overflow-auto">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/context-visibility" element={<ContextVisibility />} />
-                <Route path="/operations" element={<Operations />} />
-                <Route path="/policy" element={<Policy />} />
-                <Route path="/work-centers" element={<WorkCenters />} />
-                <Route path="/administration" element={<Administration />} />
-                <Route path="/threat-containment" element={<ThreatContainment />} />
-                <Route path="/pxgrid" element={<PxGrid />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-          </div>
+          <WalkthroughProvider>
+            <div className="min-h-screen flex flex-col bg-background">
+              <CiscoHeader />
+              <main className="flex-1 overflow-auto">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/context-visibility" element={<ContextVisibility />} />
+                  <Route path="/operations" element={<Operations />} />
+                  <Route path="/policy" element={<Policy />} />
+                  <Route path="/work-centers" element={<WorkCenters />} />
+                  <Route path="/administration" element={<Administration />} />
+                  <Route path="/threat-containment" element={<ThreatContainment />} />
+                  <Route path="/pxgrid" element={<PxGrid />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+            </div>
+            <WalkthroughOverlay />
+          </WalkthroughProvider>
         </BrowserRouter>
       </SimulationProvider>
     </TooltipProvider>
