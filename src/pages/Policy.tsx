@@ -192,15 +192,26 @@ const Policy = () => {
             <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Downloadable ACLs (DACLs)</span></div><button data-walkthrough="add-dacl-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>+ Add DACL</button></div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Results &gt; Authorization &gt; Downloadable ACLs. Click a DACL to edit Access Control Entries.</div>
             <Table headers={['DACL Name', 'IP Version', 'Description', 'ACE Lines']}
-              rows={downloadableACLs.map(d => [
+              rows={sim.dacls.map(d => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{d.name}</span>,
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#049fd920', color: '#049fd9' }}>{(d as any).ipVersion || 'IPv4'}</span>,
                 <span style={{ color: '#666' }}>{d.description}</span>,
                 <span className="font-mono">{d.content.split('\n').length}</span>,
               ])}
-              onRowClick={(i) => { setSelectedDACL(downloadableACLs[i]); setDaclOpen(true); }}
+              onRowClick={(i) => { setSelectedDACL(sim.dacls[i]); setDaclOpen(true); }}
             />
             <DACLEditorDialog dacl={selectedDACL} open={daclOpen} onOpenChange={setDaclOpen} />
+            {/* Add DACL Dialog */}
+            <Dialog open={addDaclOpen} onOpenChange={setAddDaclOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader><DialogTitle className="text-sm">Add Downloadable ACL</DialogTitle></DialogHeader>
+                <div className="space-y-3 text-xs">
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>DACL Name *</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDaclName} onChange={e => setNewDaclName(e.target.value)} placeholder="e.g. ACL-LAB-PERMIT" /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>ACE Content</label><textarea className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card font-mono h-20" value={newDaclContent} onChange={e => setNewDaclContent(e.target.value)} /></div>
+                </div>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDaclOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={handleAddDACL}>Create</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         )}
 
