@@ -11,9 +11,9 @@ import LogDetailDialog from "@/components/LogDetailDialog";
 type Tab = 'live-logs' | 'live-sessions' | 'tacacs-logs' | 'troubleshoot' | 'reports' | 'anc' | 'system360' | 'message-codes';
 
 const Operations = () => {
+  const sim = useSimulation();
   const [tab, setTab] = useState<Tab>('live-logs');
   const [logs, setLogs] = useState(() => generateRadiusLogs(30));
-  const [sessions] = useState(() => generateLiveSessions(40));
   const [tacacsLogs] = useState(() => generateTacacsLogs(25));
   const [autoRefresh, setAutoRefresh] = useState(true);
   const counterRef = useRef(31);
