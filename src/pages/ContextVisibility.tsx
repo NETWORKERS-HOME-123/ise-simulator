@@ -80,7 +80,7 @@ const ContextVisibility = () => {
         filterOptions={filterOptions} filterValue={filterGroup} onFilterChange={v => setFilterGroup(v)}
         onRefresh={() => toast.info('Endpoint list refreshed')}
       >
-        <button className="flex items-center gap-1 text-xs px-2 py-1 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddOpen(true)}>
+        <button data-walkthrough="add-endpoint-btn" className="flex items-center gap-1 text-xs px-2 py-1 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddOpen(true)}>
           <Plus size={12} /> Add Endpoint
         </button>
         {selectedIds.size > 0 && (
