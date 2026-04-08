@@ -192,7 +192,7 @@ const Administration = () => {
             <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Certificate Management</span></div>
             <div className="flex items-center border-b border-border mb-3">
               {([['system', 'System Certificates'], ['trusted', 'Trusted Certificates'], ['ca', 'Certificate Authority'], ['csr', 'Certificate Signing Requests']] as const).map(([key, label]) => (
-                <button key={key} className="px-4 py-2 text-xs font-medium border-b-2 transition-colors" style={{ color: certTab === key ? '#049fd9' : '#666', borderBottomColor: certTab === key ? '#049fd9' : 'transparent' }} onClick={() => setCertTab(key)}>{label}</button>
+                <button key={key} data-walkthrough={`cert-tab-${key}`} className="px-4 py-2 text-xs font-medium border-b-2 transition-colors" style={{ color: certTab === key ? '#049fd9' : '#666', borderBottomColor: certTab === key ? '#049fd9' : 'transparent' }} onClick={() => setCertTab(key)}>{label}</button>
               ))}
             </div>
             {certTab === 'system' && (
@@ -452,7 +452,7 @@ const Administration = () => {
           <>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2"><Router size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Devices</span></div>
-              <button className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddDeviceOpen(true)}>+ Add Device</button>
+              <button data-walkthrough="add-device-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddDeviceOpen(true)}>+ Add Device</button>
             </div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a device to configure RADIUS, TACACS+, SNMP, and TrustSec settings</div>
             <ISETable headers={['Name', 'IP Address', 'Device Type', 'Location', 'Profile', 'TACACS+', 'Status']}
@@ -546,7 +546,7 @@ const Administration = () => {
           <>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2"><UserCheck size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Internal Users</span></div>
-              <button className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddUserOpen(true)}>+ Add User</button>
+              <button data-walkthrough="add-user-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddUserOpen(true)}>+ Add User</button>
             </div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a user to edit details and custom attributes</div>
             <ISETable headers={['Username', 'First Name', 'Last Name', 'Email', 'Identity Group', 'Status', 'Last Password Change']}

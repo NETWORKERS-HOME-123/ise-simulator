@@ -99,13 +99,13 @@ const Operations = () => {
     return () => clearInterval(iv);
   }, [tcpDumpRunning]);
 
-  const tabs: { key: Tab; label: string; icon: React.ReactNode; group?: string }[] = [
+  const tabs: { key: Tab; label: string; icon: React.ReactNode; group?: string; wt?: string }[] = [
     { key: 'live-logs', label: 'RADIUS > Live Logs', icon: <Activity size={13} />, group: 'RADIUS' },
     { key: 'live-sessions', label: 'RADIUS > Live Sessions', icon: <Wifi size={13} />, group: 'RADIUS' },
     { key: 'tacacs-logs', label: 'TACACS > Live Logs', icon: <Server size={13} />, group: 'TACACS' },
     { key: 'reports', label: 'Reports', icon: <FileBarChart size={13} /> },
-    { key: 'troubleshoot', label: 'Troubleshoot', icon: <Terminal size={13} /> },
-    { key: 'anc', label: 'ANC', icon: <ShieldAlert size={13} /> },
+    { key: 'troubleshoot', label: 'Troubleshoot', icon: <Terminal size={13} />, wt: 'tab-troubleshoot' },
+    { key: 'anc', label: 'ANC', icon: <ShieldAlert size={13} />, wt: 'tab-anc' },
     { key: 'system360', label: 'System 360', icon: <BarChart3 size={13} /> },
     { key: 'message-codes', label: 'Message Codes', icon: <BookOpen size={13} /> },
   ];
@@ -115,7 +115,7 @@ const Operations = () => {
       <div className="text-xs" style={{ color: '#666' }}>Operations &gt; <span className="font-semibold" style={{ color: '#333' }}>{tabs.find(t => t.key === tab)?.label}</span></div>
       <div className="flex items-center border-b border-border overflow-x-auto">
         {tabs.map(t => (
-          <button key={t.key} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors border-b-2 whitespace-nowrap" style={{ color: tab === t.key ? '#049fd9' : '#666', borderBottomColor: tab === t.key ? '#049fd9' : 'transparent' }} onClick={() => setTab(t.key)}>
+          <button key={t.key} data-walkthrough={(t as any).wt || undefined} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors border-b-2 whitespace-nowrap" style={{ color: tab === t.key ? '#049fd9' : '#666', borderBottomColor: tab === t.key ? '#049fd9' : 'transparent' }} onClick={() => setTab(t.key)}>
             {t.icon} {t.label}
           </button>
         ))}
@@ -266,7 +266,7 @@ const Operations = () => {
                 <div><label className="block mb-1" style={{ color: '#555' }}>NAS IP Address</label><input className="w-full border border-border rounded px-2 py-1 text-xs bg-card" defaultValue="10.1.100.1" /></div>
                 <div><label className="block mb-1" style={{ color: '#555' }}>Policy Server</label><select className="w-full border border-border rounded px-2 py-1 text-xs bg-card"><option>ise-psn01</option><option>ise-psn02</option></select></div>
               </div>
-              <button className="mt-3 text-xs px-4 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>Run Test</button>
+              <button data-walkthrough="run-auth-test" className="mt-3 text-xs px-4 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>Run Test</button>
             </div>
           </div>
         </div>

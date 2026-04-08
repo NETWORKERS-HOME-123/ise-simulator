@@ -73,14 +73,14 @@ const ContextVisibility = () => {
     <div className="p-4 space-y-3">
       <div className="text-xs" style={{ color: '#666' }}>Context Visibility &gt; <span className="font-semibold" style={{ color: '#333' }}>Endpoints</span></div>
 
-      <TableToolbar
+      <TableToolbar data-walkthrough="cv-search"
         search={search} onSearchChange={setSearch}
         totalCount={sim.endpoints.length} filteredCount={filtered.length}
         placeholder="Search MAC, IP, or Profile..."
         filterOptions={filterOptions} filterValue={filterGroup} onFilterChange={v => setFilterGroup(v)}
         onRefresh={() => toast.info('Endpoint list refreshed')}
       >
-        <button className="flex items-center gap-1 text-xs px-2 py-1 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddOpen(true)}>
+        <button data-walkthrough="add-endpoint-btn" className="flex items-center gap-1 text-xs px-2 py-1 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddOpen(true)}>
           <Plus size={12} /> Add Endpoint
         </button>
         {selectedIds.size > 0 && (
@@ -92,7 +92,7 @@ const ContextVisibility = () => {
 
       <div className="text-[10px] mb-1" style={{ color: '#888' }}>Right-click rows for actions • Click to view details • Checkbox to bulk select</div>
 
-      <div className="border border-border rounded overflow-auto bg-card">
+      <div data-walkthrough="endpoint-table" className="border border-border rounded overflow-auto bg-card">
         <table className="w-full text-xs">
           <thead>
             <tr style={{ background: '#f0f0f0' }}>

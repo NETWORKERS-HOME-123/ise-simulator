@@ -64,6 +64,7 @@ const CiscoHeader = () => {
             return (
               <button
                 key={tab.path}
+                data-walkthrough={`nav-${tab.label.toLowerCase().replace(/\s+/g, '-')}`}
                 onClick={() => navigate(tab.path)}
                 className="px-4 h-full text-xs font-medium transition-colors relative flex items-center"
                 style={{
