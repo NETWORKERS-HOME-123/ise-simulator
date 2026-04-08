@@ -1,8 +1,9 @@
 import { useState } from "react";
 import ISELeftNav, { NavSection } from "@/components/ISELeftNav";
-import { policySets, authorizationProfiles, policyConditions, radiusDictionaries, profilingPolicies, clientProvisioningResources } from "@/lib/mockData";
+import { useSimulation } from "@/context/ISESimulationContext";
+import { radiusDictionaries, profilingPolicies, clientProvisioningResources } from "@/lib/mockData";
 import { clientProvisioningRuleDetails } from "@/lib/mockDataExtended";
-import { downloadableACLs, allowedProtocolsServices } from "@/lib/mockDataGap";
+import { allowedProtocolsServices } from "@/lib/mockDataGap";
 import { Shield, CheckCircle, XCircle, FileText, Layers, BookOpen, Cpu, Download, Lock, ListChecks, Clock } from "lucide-react";
 import { toast } from "sonner";
 import PolicySetDetailDialog from "@/components/PolicySetDetailDialog";
