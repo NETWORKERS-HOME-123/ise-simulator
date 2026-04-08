@@ -1,53 +1,69 @@
 
 
-# Cisco ISE Dashboard Simulator
+# Cisco ISE Dashboard — Missing Features Plan
 
-## Overview
-Build a realistic clone of the Cisco Identity Services Engine (ISE) administration dashboard as an interactive simulator with mock data, mimicking the look and feel of the actual Cisco ISE 2.x/3.x interface.
+Based on the video walkthrough of Cisco ISE 2.x UI, the following features and sub-pages are missing from the current implementation.
 
-## Pages & Layout
+## What's Missing
 
-### Global Shell
-- **Top navbar**: Cisco logo (left), navigation tabs (Home, Context Visibility, Operations, Policy, Administration, Work Centers), user menu & settings (right) — dark charcoal/black background with white text
-- **Secondary nav bar**: Breadcrumb trail and quick-action icons
-- **Cisco ISE branding** with teal/dark theme consistent with Cisco enterprise products
+### 1. Operations — Live Sessions sub-page
+The video shows **Live Sessions** alongside Live Logs under Operations > RADIUS. Currently we only have Live Logs.
+- Add `/operations/live-sessions` route showing active sessions table: Username, IP, MAC, Session ID, Session Duration, NAS IP, Authorization Policy
+- Add sub-navigation tabs (Live Logs | Live Sessions) within the Operations page
 
-### 1. Home Dashboard (Main Page)
-- **Summary bar** at top with colored metric cards: Active Endpoints (orange), Authenticated Guests (green), Profiled Endpoints (blue), each with sparkline charts and 24h trend
-- **System Summary panel** (left): CPU, Memory, Authentication Latency gauges with 60m time selector
-- **Alarms panel** (center-right): Table with severity icons (info/warning/error), alarm name, occurrences count, last occurred time — rows like "Configuration Changed", "ISE Authentication Inactivity", "DNS Resolution Failure", "NTP Sync Failure"
-- **Right sidebar dashlets**: Passed Authentications, Failed Authentications, Distribution by endpoint type
-- All dashlets have expand/collapse (+) controls
+### 2. Operations — Troubleshooting sub-page
+- Add `/operations/troubleshoot` with a diagnostic tools panel (Session Trace, TCP Dump simulator, RADIUS test)
 
-### 2. Context Visibility Page
-- Endpoints list table with columns: MAC Address, IP, Identity Group, Endpoint Profile, Status
-- Filter bar and search
-- Mock data with realistic network device entries
+### 3. Policy — Sub-pages (Authentication, Authorization, Policy Elements)
+The video walks through multiple Policy sub-sections:
+- **Authentication Policies** tab — rules with allowed protocols and identity stores
+- **Authorization Policies** tab — "if X then Y" rules with conditions and authorization profiles
+- **Policy Elements** section with sub-tabs:
+  - **Results > Authorization Profiles** — list of profiles (PermitAccess, CWA_Redirect, DenyAccess, BYOD_Onboard, etc.)
+  - **Conditions** — reusable condition library
+  - **Dictionaries** — RADIUS attribute dictionaries
+- **Profiling Policies** — device profiling rules (Cisco-IP-Phone, Apple-MacBook, etc.)
+- **Client Provisioning** — supplicant provisioning wizard list (Windows, Android, iOS, Mac, Chromebook NSP)
+- Add left sidebar navigation within the Policy page for these sub-sections
 
-### 3. Operations > RADIUS > Live Logs
-- Real-time log viewer table with: Time, Status (pass/fail icons), Details, Username, Endpoint ID, Identity Group, Server
-- Auto-refresh indicator with simulated new entries
+### 4. Administration — Full sub-page tree
+The video covers extensive Administration sub-menus:
+- **System > Deployment** (exists, but needs node detail dialog with role checkboxes, profiling probe settings: NetFlow, DHCP, DHCP SPAN, HTTP, RADIUS, NMAP, DNS, AD, SNMP — with toggles)
+- **System > Licensing** — Base/Plus/Apex/Device Admin license table with counts and status
+- **System > Certificates** — sub-tabs: System Certificates, Trusted Certificates, Certificate Authority, Certificate Signing Requests
+- **System > Settings** — general settings panel
+- **Admin Access > Administrators > Admin Users** — admin user management table with Add dialog
+- **PAN Failover** toggle and status display within Deployment
+- Add left sidebar navigation within Administration for these sub-sections
 
-### 4. Policy Page (simplified)
-- Policy Sets list view with rule names, conditions, and results
-- Read-only display of authentication/authorization policies
+### 5. Work Centers nav tab
+The video mentions Work Centers as a top-level nav item. Add it to the header and create a page with placeholder sub-sections (Guest Access, BYOD, Device Administration, Network Access, Posture, TrustSec).
 
-### 5. Administration Page (simplified)
-- System settings view: Deployment nodes table showing PAN, MnT, PSN node roles
-- Node status indicators (green/red)
+### 6. Node Detail Dialog (Deployment)
+Clicking a node in the deployment table should open a detail panel/dialog showing:
+- Node hostname, IP, roles (Admin, Monitoring, Policy Service checkboxes)
+- Profiling configuration section with toggle probes (NetFlow, DHCP, HTTP, RADIUS, NMAP, DNS, AD, SNMP)
+- Save button
 
-## Interactive Simulator Features
-- All navigation tabs are clickable and route between pages
-- Dashboard metric values update with randomized mock data on refresh
-- Alarms table is sortable and filterable
-- Dashlets can be expanded/collapsed
-- Simulated "last updated" timestamps
-- Toast notifications for simulated system events
+## Technical Approach
 
-## Design System
-- **Colors**: Cisco enterprise palette — dark header (#1a1a1a), white content area, teal accents (#049fd9), severity colors (red #cc0000, amber #fbab18, blue #049fd9, green #6cc04a)
-- **Typography**: System sans-serif stack mimicking Cisco's CiscoSans feel
-- **Tables**: Dense enterprise-style with alternating row shading
-- **Cards/Panels**: Light borders, subtle shadows, compact padding
-- **Icons**: Lucide icons for severity, status, and navigation
+- **Routing**: Add nested routes under `/operations/*`, `/policy/*`, `/administration/*`, `/work-centers`
+- **Left sidebar navigation**: Policy and Administration pages get an ISE-style left sidebar with collapsible menu sections
+- **Mock data**: Extend `mockData.ts` with live sessions, authorization profiles, certificates, licenses, admin users, profiling policies, client provisioning data
+- **Components**: Create reusable `ISELeftNav` sidebar component for sub-page navigation
+- **Dialogs**: Use existing shadcn Dialog for node detail view and Add Admin User form
+
+## Files to Create/Modify
+
+| File | Action |
+|------|--------|
+| `src/lib/mockData.ts` | Add mock data for sessions, auth profiles, certificates, licenses, admin users, profiling policies |
+| `src/components/ISELeftNav.tsx` | New — reusable left sidebar for sub-page navigation |
+| `src/pages/Operations.tsx` | Refactor to tabbed layout (Live Logs / Live Sessions / Troubleshoot) |
+| `src/pages/Policy.tsx` | Full rewrite with left nav and sub-pages (Policy Sets, Auth, Authz, Elements, Profiling, Client Provisioning) |
+| `src/pages/Administration.tsx` | Full rewrite with left nav and sub-pages (Deployment w/ node dialog, Licensing, Certificates, Admin Users) |
+| `src/pages/WorkCenters.tsx` | New — placeholder page with sub-section cards |
+| `src/components/NodeDetailDialog.tsx` | New — deployment node detail with profiling probes |
+| `src/components/CiscoHeader.tsx` | Add Work Centers tab |
+| `src/App.tsx` | Add Work Centers route |
 
