@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import ISELeftNav, { NavSection } from "@/components/ISELeftNav";
 import NodeDetailDialog from "@/components/NodeDetailDialog";
 import NetworkDeviceDetailDialog from "@/components/NetworkDeviceDetailDialog";
 import CertificateDetailDialog from "@/components/CertificateDetailDialog";
 import UserDetailDialog from "@/components/UserDetailDialog";
 import BackupRestorePanel from "@/components/BackupRestorePanel";
-import { deploymentNodes, licenses, systemCertificates, trustedCertificates, adminUsers, networkDevices, networkDeviceGroups, internalUsers, identityGroupsList, externalIdentitySources } from "@/lib/mockData";
+import { useSimulation } from "@/context/ISESimulationContext";
+import { deploymentNodes, licenses, systemCertificates, trustedCertificates, adminUsers, networkDeviceGroups, identityGroupsList, externalIdentitySources } from "@/lib/mockData";
 import { systemSettings, licensingDetails } from "@/lib/mockDataExtended";
 import { networkDeviceProfiles, smtpConfig, ntpServers, patchHistory, ersApiSettings, dataConnectSettings } from "@/lib/mockDataGap";
 import { Server, CheckCircle, XCircle, Key, Shield, Users, Settings, ToggleLeft, Router, Layers, UserCheck, Database, Globe, HardDrive, Wrench, Plug } from "lucide-react";
