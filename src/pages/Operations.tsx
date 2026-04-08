@@ -34,9 +34,13 @@ const Operations = () => {
   const [ancApplyOpen, setAncApplyOpen] = useState(false);
   const [ancMac, setAncMac] = useState('');
   const [ancPolicy, setAncPolicy] = useState('ANC-Quarantine');
-  const [localAnc, setLocalAnc] = useState(sim.ancEndpoints);
   const [debugMac, setDebugMac] = useState('');
   const [debugOutput, setDebugOutput] = useState<string[]>([]);
+  // Auth test state
+  const [testUsername, setTestUsername] = useState('jsmith');
+  const [testPassword, setTestPassword] = useState('••••••');
+  const [testNasIP, setTestNasIP] = useState('10.1.100.1');
+  const [testResult, setTestResult] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (!autoRefresh || tab !== 'live-logs') return;
