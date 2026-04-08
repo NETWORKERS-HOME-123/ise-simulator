@@ -10,6 +10,8 @@ import Operations from "./pages/Operations";
 import Policy from "./pages/Policy";
 import WorkCenters from "./pages/WorkCenters";
 import Administration from "./pages/Administration";
+import ThreatContainment from "./pages/ThreatContainment";
+import PxGrid from "./pages/PxGrid";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
