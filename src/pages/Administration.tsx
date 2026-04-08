@@ -503,7 +503,7 @@ const Administration = () => {
             </div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a device to configure RADIUS, TACACS+, SNMP, and TrustSec settings</div>
             <ISETable headers={['Name', 'IP Address', 'Device Type', 'Location', 'Profile', 'TACACS+', 'Status']}
-              rows={networkDevices.map(d => [
+              rows={sim.networkDevices.map(d => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{d.name}</span>,
                 <span className="font-mono">{d.ip}</span>,
                 <span style={{ color: '#666' }}>{d.type}</span>,
@@ -511,27 +511,26 @@ const Administration = () => {
                 d.tacacs ? <CheckCircle size={12} style={{ color: '#6cc04a' }} /> : <XCircle size={12} style={{ color: '#ccc' }} />,
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#6cc04a20', color: '#3d7a2a' }}>{d.status}</span>,
               ])}
-              onRowClick={(i) => { setSelectedDevice(networkDevices[i]); setDeviceDetailOpen(true); }}
+              onRowClick={(i) => { setSelectedDevice(sim.networkDevices[i]); setDeviceDetailOpen(true); }}
             />
             <NetworkDeviceDetailDialog device={selectedDevice} open={deviceDetailOpen} onOpenChange={setDeviceDetailOpen} />
             <Dialog open={addDeviceOpen} onOpenChange={setAddDeviceOpen}>
               <DialogContent className="max-w-lg">
                 <DialogHeader><DialogTitle className="text-sm">Add Network Device</DialogTitle></DialogHeader>
                 <div className="space-y-3 text-xs">
-                  {[['Device Name', 'text'], ['IP Address / IP Range', 'text'], ['RADIUS Shared Secret', 'password']].map(([label, type]) => (
-                    <div key={label}><label className="block mb-1 font-medium" style={{ color: '#555' }}>{label}</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type={type} /></div>
-                  ))}
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Name *</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDeviceName} onChange={e => setNewDeviceName(e.target.value)} placeholder="e.g. LAB-SW-01" /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>IP Address / IP Range *</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDeviceIP} onChange={e => setNewDeviceIP(e.target.value)} placeholder="e.g. 10.10.10.1" /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>RADIUS Shared Secret</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type="password" value={newDeviceSecret} onChange={e => setNewDeviceSecret(e.target.value)} /></div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Profile</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Cisco</option><option>Aruba</option><option>HP</option><option>Juniper</option><option>Meraki</option></select></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Profile</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDeviceProfile} onChange={e => setNewDeviceProfile(e.target.value)}><option>Cisco</option><option>Aruba</option><option>HP</option><option>Juniper</option><option>Meraki</option></select></div>
                     <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Model Name</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" placeholder="e.g. Catalyst 9300" /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Type (NDG)</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Switch</option><option>Wireless Controller</option><option>Firewall</option><option>VPN</option><option>Router</option><option>Access Point</option></select></div>
-                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Location (NDG)</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Building A</option><option>Building B</option><option>Data Center</option><option>DMZ</option><option>Remote</option></select></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Type (NDG)</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDeviceType} onChange={e => setNewDeviceType(e.target.value)}><option>Switch</option><option>Wireless Controller</option><option>Firewall</option><option>VPN</option><option>Router</option><option>Access Point</option></select></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Location (NDG)</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDeviceLocation} onChange={e => setNewDeviceLocation(e.target.value)}><option>Building A</option><option>Building B</option><option>Data Center</option><option>DMZ</option><option>Remote</option></select></div>
                   </div>
-                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Software Version</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" placeholder="e.g. 17.9.1" /></div>
                 </div>
-                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDeviceOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => { toast.success("Network device added successfully"); setAddDeviceOpen(false); }}>Save</Button></DialogFooter>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDeviceOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={handleAddDevice}>Save</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           </>
