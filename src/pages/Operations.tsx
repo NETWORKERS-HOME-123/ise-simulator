@@ -14,7 +14,7 @@ const Operations = () => {
   const sim = useSimulation();
   const [tab, setTab] = useState<Tab>('live-logs');
   const [logs, setLogs] = useState(() => generateRadiusLogs(30));
-  const [tacacsLogs] = useState(() => generateTacacsLogs(25));
+  const [sessions] = useState(() => generateLiveSessions(40));
   const [autoRefresh, setAutoRefresh] = useState(true);
   const counterRef = useRef(31);
   const [traceInput, setTraceInput] = useState('');
