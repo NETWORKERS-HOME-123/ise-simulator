@@ -104,7 +104,7 @@ const Operations = () => {
     { key: 'live-sessions', label: 'RADIUS > Live Sessions', icon: <Wifi size={13} />, group: 'RADIUS' },
     { key: 'tacacs-logs', label: 'TACACS > Live Logs', icon: <Server size={13} />, group: 'TACACS' },
     { key: 'reports', label: 'Reports', icon: <FileBarChart size={13} /> },
-    { key: 'troubleshoot', label: 'Troubleshoot', icon: <Terminal size={13} /> },
+    { key: 'troubleshoot', label: 'Troubleshoot', icon: <Terminal size={13} />, wt: 'tab-troubleshoot' },
     { key: 'anc', label: 'ANC', icon: <ShieldAlert size={13} /> },
     { key: 'system360', label: 'System 360', icon: <BarChart3 size={13} /> },
     { key: 'message-codes', label: 'Message Codes', icon: <BookOpen size={13} /> },
