@@ -596,7 +596,7 @@ const Administration = () => {
             </div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a user to edit details and custom attributes</div>
             <ISETable headers={['Username', 'First Name', 'Last Name', 'Email', 'Identity Group', 'Status', 'Last Password Change']}
-              rows={internalUsers.map(u => [
+              rows={sim.internalUsers.map(u => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{u.name}</span>,
                 u.firstName, u.lastName,
                 <span className="font-mono text-[11px]">{u.email}</span>,
@@ -604,19 +604,23 @@ const Administration = () => {
                 u.status === 'Enabled' ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Enabled</span> : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#cc0000' }} /> Disabled</span>,
                 <span className="font-mono" style={{ color: '#888' }}>{u.lastPasswordChange}</span>,
               ])}
-              onRowClick={(i) => { setSelectedInternalUser(internalUsers[i]); setInternalUserOpen(true); }}
+              onRowClick={(i) => { setSelectedInternalUser(sim.internalUsers[i]); setInternalUserOpen(true); }}
             />
             <UserDetailDialog user={selectedInternalUser} type="internal" open={internalUserOpen} onOpenChange={setInternalUserOpen} />
             <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
               <DialogContent className="max-w-md">
                 <DialogHeader><DialogTitle className="text-sm">Add Internal User</DialogTitle></DialogHeader>
                 <div className="space-y-3 text-xs">
-                  {[['Username', 'text'], ['First Name', 'text'], ['Last Name', 'text'], ['Email', 'email'], ['Password', 'password']].map(([label, type]) => (
-                    <div key={label}><label className="block mb-1 font-medium" style={{ color: '#555' }}>{label}</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type={type} /></div>
-                  ))}
-                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Identity Group</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card">{identityGroupsList.map(g => <option key={g.id}>{g.name}</option>)}</select></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Username *</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="e.g. labuser" /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>First Name</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newFirstName} onChange={e => setNewFirstName(e.target.value)} /></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Last Name</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newLastName} onChange={e => setNewLastName(e.target.value)} /></div>
+                  </div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Email</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Password</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Identity Group</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newIdentityGroup} onChange={e => setNewIdentityGroup(e.target.value)}>{identityGroupsList.map(g => <option key={g.id}>{g.name}</option>)}</select></div>
                 </div>
-                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddUserOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => { toast.success("Internal user created successfully"); setAddUserOpen(false); }}>Create</Button></DialogFooter>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddUserOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={handleAddUser}>Create</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           </>
