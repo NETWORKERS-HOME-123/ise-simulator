@@ -66,6 +66,7 @@ const Policy = () => {
           <>
             <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Policy Sets</span></div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a policy set to view embedded Authentication and Authorization rules. In real ISE, auth/authz rules are inside each policy set.</div>
+            <div className="flex justify-end mb-2"><button data-walkthrough="add-policy-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>+ Add Policy Set</button></div>
             <Table headers={['#', 'Status', 'Policy Set Name', 'Conditions', 'Allowed Protocols', 'Hits']}
               rows={policySets.map(p => [
                 <span className="font-mono" style={{ color: '#999' }}>{p.id}</span>,
