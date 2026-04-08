@@ -12,6 +12,7 @@ import { Server, CheckCircle, XCircle, Key, Shield, Users, Settings, ToggleLeft,
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const sections: NavSection[] = [
   { label: 'System', items: [
