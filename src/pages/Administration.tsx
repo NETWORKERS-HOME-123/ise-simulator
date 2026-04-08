@@ -452,7 +452,7 @@ const Administration = () => {
           <>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2"><Router size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Devices</span></div>
-              <button className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddDeviceOpen(true)}>+ Add Device</button>
+              <button data-walkthrough="add-device-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddDeviceOpen(true)}>+ Add Device</button>
             </div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a device to configure RADIUS, TACACS+, SNMP, and TrustSec settings</div>
             <ISETable headers={['Name', 'IP Address', 'Device Type', 'Location', 'Profile', 'TACACS+', 'Status']}
