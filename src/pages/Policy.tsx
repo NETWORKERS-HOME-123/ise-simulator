@@ -2,11 +2,14 @@ import { useState } from "react";
 import ISELeftNav, { NavSection } from "@/components/ISELeftNav";
 import { policySets, authenticationPolicies, authorizationPolicies, authorizationProfiles, policyConditions, radiusDictionaries, profilingPolicies, clientProvisioningResources } from "@/lib/mockData";
 import { clientProvisioningRuleDetails } from "@/lib/mockDataExtended";
-import { Shield, CheckCircle, XCircle, FileText, Layers, BookOpen, Cpu, Download } from "lucide-react";
+import { downloadableACLs, allowedProtocolsServices } from "@/lib/mockDataGap";
+import { Shield, CheckCircle, XCircle, FileText, Layers, BookOpen, Cpu, Download, Lock, ListChecks, Clock } from "lucide-react";
 import PolicySetDetailDialog from "@/components/PolicySetDetailDialog";
 import AuthzProfileDetailDialog from "@/components/AuthzProfileDetailDialog";
 import ConditionStudioDialog from "@/components/ConditionStudioDialog";
 import ProfilingPolicyDetailDialog from "@/components/ProfilingPolicyDetailDialog";
+import DACLEditorDialog from "@/components/DACLEditorDialog";
+import AllowedProtocolsDialog from "@/components/AllowedProtocolsDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -16,8 +19,12 @@ const sections: NavSection[] = [
   { label: 'Authorization', items: [{ label: 'Authorization Policies', key: 'authz-policies' }], defaultOpen: true },
   { label: 'Policy Elements', items: [
     { label: 'Authorization Profiles', key: 'authz-profiles' },
+    { label: 'Downloadable ACLs', key: 'dacls' },
+    { label: 'Allowed Protocols', key: 'allowed-protocols' },
     { label: 'Conditions', key: 'conditions' },
     { label: 'Dictionaries', key: 'dictionaries' },
+    { label: 'Policy Exceptions', key: 'policy-exceptions' },
+    { label: 'Time/Date Conditions', key: 'time-conditions' },
   ], defaultOpen: false },
   { label: 'Profiling', items: [{ label: 'Profiling Policies', key: 'profiling' }], defaultOpen: false },
   { label: 'Client Provisioning', items: [{ label: 'Resources', key: 'client-provisioning' }], defaultOpen: false },
@@ -25,22 +32,20 @@ const sections: NavSection[] = [
 
 const Policy = () => {
   const [active, setActive] = useState('policy-sets');
-
-  // Dialog states
   const [selectedPolicySet, setSelectedPolicySet] = useState<typeof policySets[0] | null>(null);
   const [policySetOpen, setPolicySetOpen] = useState(false);
-
   const [selectedProfile, setSelectedProfile] = useState<typeof authorizationProfiles[0] | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
-
   const [selectedCondition, setSelectedCondition] = useState<typeof policyConditions[0] | null>(null);
   const [conditionOpen, setConditionOpen] = useState(false);
-
   const [selectedProfilingPolicy, setSelectedProfilingPolicy] = useState<typeof profilingPolicies[0] | null>(null);
   const [profilingOpen, setProfilingOpen] = useState(false);
-
   const [selectedCPResource, setSelectedCPResource] = useState<typeof clientProvisioningResources[0] | null>(null);
   const [cpResourceOpen, setCpResourceOpen] = useState(false);
+  const [selectedDACL, setSelectedDACL] = useState<typeof downloadableACLs[0] | null>(null);
+  const [daclOpen, setDaclOpen] = useState(false);
+  const [selectedProtocol, setSelectedProtocol] = useState<typeof allowedProtocolsServices[0] | null>(null);
+  const [protocolOpen, setProtocolOpen] = useState(false);
 
   return (
     <div className="flex">
@@ -113,6 +118,38 @@ const Policy = () => {
           </>
         )}
 
+        {active === 'dacls' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Downloadable ACLs (DACLs)</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a DACL to edit Access Control Entries</div>
+            <Table headers={['DACL Name', 'Description', 'ACE Lines']}
+              rows={downloadableACLs.map(d => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{d.name}</span>,
+                <span style={{ color: '#666' }}>{d.description}</span>,
+                <span className="font-mono">{d.content.split('\n').length}</span>,
+              ])}
+              onRowClick={(i) => { setSelectedDACL(downloadableACLs[i]); setDaclOpen(true); }}
+            />
+            <DACLEditorDialog dacl={selectedDACL} open={daclOpen} onOpenChange={setDaclOpen} />
+          </>
+        )}
+
+        {active === 'allowed-protocols' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><ListChecks size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Allowed Protocols Services</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a service to toggle EAP protocol types</div>
+            <Table headers={['Service Name', 'Description', 'Enabled Protocols']}
+              rows={allowedProtocolsServices.map(s => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{s.name}</span>,
+                <span style={{ color: '#666' }}>{s.description}</span>,
+                <span className="font-mono">{Object.values(s.protocols).filter(Boolean).length} / {Object.keys(s.protocols).length}</span>,
+              ])}
+              onRowClick={(i) => { setSelectedProtocol(allowedProtocolsServices[i]); setProtocolOpen(true); }}
+            />
+            <AllowedProtocolsDialog service={selectedProtocol} open={protocolOpen} onOpenChange={setProtocolOpen} />
+          </>
+        )}
+
         {active === 'conditions' && (
           <>
             <div className="flex items-center gap-2 mb-2"><FileText size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Policy Conditions Library</span></div>
@@ -141,6 +178,47 @@ const Policy = () => {
                 d.vendor,
                 <span className="font-mono">{d.attributes}</span>,
                 <span style={{ color: '#666' }}>{d.description}</span>,
+              ])} />
+          </>
+        )}
+
+        {active === 'policy-exceptions' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Policy Exceptions</span></div>
+            <div className="text-xs mb-2" style={{ color: '#666' }}>Local and global exception rules that override standard authorization policies</div>
+            <div className="text-xs font-semibold mb-1" style={{ color: '#333' }}>Global Exceptions</div>
+            <Table headers={['#', 'Rule Name', 'Status', 'Conditions', 'Profile', 'Security Group']}
+              rows={[
+                ['1', 'Blacklisted_Devices', 'Enabled', 'EndPoints:BYODRegistration EQUALS Lost/Stolen', 'Blackhole_Stolen', 'Quarantine'],
+                ['2', 'Posture_NonCompliant', 'Enabled', 'Session:PostureStatus EQUALS NonCompliant', 'Posture_Remediation', 'Quarantine'],
+                ['3', 'ANC_Quarantined', 'Enabled', 'ANCPolicy EQUALS ANC-Quarantine', 'DenyAccess', 'Quarantine'],
+              ].map(r => [
+                <span className="font-mono" style={{ color: '#999' }}>{r[0]}</span>,
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{r[1]}</span>,
+                <StatusBadge ok label={r[2]} />,
+                <span className="font-mono text-[11px]" style={{ color: '#666' }}>{r[3]}</span>,
+                r[4], r[5],
+              ])} />
+            <div className="text-xs font-semibold mb-1 mt-3" style={{ color: '#333' }}>Local Exceptions (per Policy Set)</div>
+            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#888' }}>Local exceptions are configured within each Policy Set. Click on a policy set to manage local exceptions.</div>
+          </>
+        )}
+
+        {active === 'time-conditions' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Clock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Time and Date Conditions</span></div>
+            <Table headers={['Condition Name', 'Days', 'Start Time', 'End Time', 'Description']}
+              rows={[
+                ['Business_Hours', 'Mon-Fri', '08:00', '18:00', 'Standard business hours access window'],
+                ['After_Hours', 'Mon-Fri', '18:00', '08:00', 'Non-business hours access restriction'],
+                ['Weekend_Access', 'Sat-Sun', '00:00', '23:59', 'Weekend access window for maintenance'],
+                ['Maintenance_Window', 'Sun', '02:00', '06:00', 'Scheduled maintenance window'],
+              ].map(r => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{r[0]}</span>,
+                <span className="font-mono">{r[1]}</span>,
+                <span className="font-mono">{r[2]}</span>,
+                <span className="font-mono">{r[3]}</span>,
+                <span style={{ color: '#666' }}>{r[4]}</span>,
               ])} />
           </>
         )}
@@ -178,14 +256,9 @@ const Policy = () => {
               ])}
               onRowClick={(i) => { setSelectedCPResource(clientProvisioningResources[i]); setCpResourceOpen(true); }}
             />
-            {/* Client Provisioning Detail Dialog */}
             <Dialog open={cpResourceOpen} onOpenChange={setCpResourceOpen}>
               <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle className="text-sm">
-                    <span style={{ color: '#049fd9' }}>Client Provisioning:</span> {selectedCPResource?.name}
-                  </DialogTitle>
-                </DialogHeader>
+                <DialogHeader><DialogTitle className="text-sm"><span style={{ color: '#049fd9' }}>Client Provisioning:</span> {selectedCPResource?.name}</DialogTitle></DialogHeader>
                 {selectedCPResource && (() => {
                   const d = clientProvisioningRuleDetails[selectedCPResource.name];
                   return (

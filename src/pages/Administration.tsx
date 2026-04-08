@@ -4,9 +4,11 @@ import NodeDetailDialog from "@/components/NodeDetailDialog";
 import NetworkDeviceDetailDialog from "@/components/NetworkDeviceDetailDialog";
 import CertificateDetailDialog from "@/components/CertificateDetailDialog";
 import UserDetailDialog from "@/components/UserDetailDialog";
+import BackupRestorePanel from "@/components/BackupRestorePanel";
 import { deploymentNodes, licenses, systemCertificates, trustedCertificates, adminUsers, networkDevices, networkDeviceGroups, internalUsers, identityGroupsList, externalIdentitySources } from "@/lib/mockData";
 import { systemSettings, licensingDetails } from "@/lib/mockDataExtended";
-import { Server, CheckCircle, XCircle, Key, Shield, Users, Settings, ToggleLeft, Router, Layers, UserCheck, Database, Globe } from "lucide-react";
+import { networkDeviceProfiles, smtpConfig, ntpServers, patchHistory, ersApiSettings, dataConnectSettings } from "@/lib/mockDataGap";
+import { Server, CheckCircle, XCircle, Key, Shield, Users, Settings, ToggleLeft, Router, Layers, UserCheck, Database, Globe, HardDrive, Wrench, Plug } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,12 +18,16 @@ const sections: NavSection[] = [
     { label: 'Deployment', key: 'deployment' },
     { label: 'Licensing', key: 'licensing' },
     { label: 'Certificates', key: 'certificates' },
+    { label: 'Backup & Restore', key: 'backup-restore' },
+    { label: 'Patch Management', key: 'patch-mgmt' },
     { label: 'Settings', key: 'settings' },
   ], defaultOpen: true },
   { label: 'Network Resources', items: [
     { label: 'Network Devices', key: 'network-devices' },
     { label: 'Network Device Groups', key: 'ndg' },
+    { label: 'Network Device Profiles', key: 'ndp' },
     { label: 'External RADIUS Servers', key: 'ext-radius' },
+    { label: 'RADIUS Server Sequences', key: 'radius-sequences' },
   ], defaultOpen: false },
   { label: 'Identity Management', items: [
     { label: 'Internal Users', key: 'internal-users' },
@@ -32,6 +38,12 @@ const sections: NavSection[] = [
   { label: 'Admin Access', items: [
     { label: 'Admin Users', key: 'admin-users' },
     { label: 'Admin Groups', key: 'admin-groups' },
+  ], defaultOpen: false },
+  { label: 'System Configuration', items: [
+    { label: 'SMTP Server', key: 'smtp' },
+    { label: 'NTP Servers', key: 'ntp' },
+    { label: 'ERS (API Gateway)', key: 'ers' },
+    { label: 'Data Connect', key: 'data-connect' },
   ], defaultOpen: false },
 ];
 
@@ -48,8 +60,6 @@ const Administration = () => {
   const [addAdminOpen, setAddAdminOpen] = useState(false);
   const [addDeviceOpen, setAddDeviceOpen] = useState(false);
   const [addUserOpen, setAddUserOpen] = useState(false);
-
-  // Detail dialog states
   const [selectedDevice, setSelectedDevice] = useState<typeof networkDevices[0] | null>(null);
   const [deviceDetailOpen, setDeviceDetailOpen] = useState(false);
   const [selectedCert, setSelectedCert] = useState<typeof systemCertificates[0] | null>(null);
@@ -73,6 +83,7 @@ const Administration = () => {
       <div className="flex-1 p-4 space-y-3 overflow-auto">
         <div className="text-xs" style={{ color: '#666' }}>Administration &gt; {secLabel} &gt; <span className="font-semibold" style={{ color: '#333' }}>{itemLabel}</span></div>
 
+        {/* ============= DEPLOYMENT ============= */}
         {active === 'deployment' && (
           <>
             <div className="flex items-center justify-between mb-2">
@@ -109,6 +120,7 @@ const Administration = () => {
           </>
         )}
 
+        {/* ============= LICENSING ============= */}
         {active === 'licensing' && (
           <>
             <div className="flex items-center justify-between mb-2">
@@ -137,34 +149,22 @@ const Administration = () => {
                 </div>
               ))}
             </div>
-            {/* Licensing Detail Dialog */}
             <Dialog open={licenseDetailOpen} onOpenChange={setLicenseDetailOpen}>
               <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                 <DialogHeader><DialogTitle className="text-sm"><span style={{ color: '#049fd9' }}>Smart License</span> Details</DialogTitle></DialogHeader>
                 <div className="border border-border rounded p-3 bg-card text-xs space-y-2">
                   <div className="text-xs font-semibold mb-2" style={{ color: '#333' }}>Registration</div>
                   {Object.entries(licensingDetails.smartLicense).map(([k, v]) => (
-                    <div key={k} className="flex items-center">
-                      <span className="w-44 font-medium shrink-0 capitalize" style={{ color: '#555' }}>{k.replace(/([A-Z])/g, ' $1')}</span>
-                      <span className="font-mono" style={{ color: '#333' }}>{v}</span>
-                    </div>
+                    <div key={k} className="flex items-center"><span className="w-44 font-medium shrink-0 capitalize" style={{ color: '#555' }}>{k.replace(/([A-Z])/g, ' $1')}</span><span className="font-mono" style={{ color: '#333' }}>{v}</span></div>
                   ))}
                 </div>
                 <div className="mt-3">
-                  <div className="text-xs font-semibold mb-2" style={{ color: '#333' }}>UDI (Universal Device Identifier)</div>
+                  <div className="text-xs font-semibold mb-2" style={{ color: '#333' }}>UDI</div>
                   <div className="border border-border rounded overflow-auto bg-card">
                     <table className="w-full text-[11px]">
-                      <thead><tr style={{ background: '#f0f0f0' }}>
-                        <th className="text-left p-2 font-semibold" style={{ color: '#555' }}>PID</th>
-                        <th className="text-left p-2 font-semibold" style={{ color: '#555' }}>Serial Number</th>
-                        <th className="text-left p-2 font-semibold" style={{ color: '#555' }}>Hostname</th>
-                      </tr></thead>
+                      <thead><tr style={{ background: '#f0f0f0' }}><th className="text-left p-2 font-semibold" style={{ color: '#555' }}>PID</th><th className="text-left p-2 font-semibold" style={{ color: '#555' }}>Serial Number</th><th className="text-left p-2 font-semibold" style={{ color: '#555' }}>Hostname</th></tr></thead>
                       <tbody>{licensingDetails.udi.map((u, i) => (
-                        <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
-                          <td className="p-2 font-mono">{u.pid}</td>
-                          <td className="p-2 font-mono" style={{ color: '#049fd9' }}>{u.serialNumber}</td>
-                          <td className="p-2 font-mono">{u.hostname}</td>
-                        </tr>
+                        <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}><td className="p-2 font-mono">{u.pid}</td><td className="p-2 font-mono" style={{ color: '#049fd9' }}>{u.serialNumber}</td><td className="p-2 font-mono">{u.hostname}</td></tr>
                       ))}</tbody>
                     </table>
                   </div>
@@ -175,6 +175,7 @@ const Administration = () => {
           </>
         )}
 
+        {/* ============= CERTIFICATES ============= */}
         {active === 'certificates' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Certificate Management</span></div>
@@ -229,11 +230,6 @@ const Administration = () => {
                     ].map(r => r.map((c, i) => i === 0 ? <span className="font-semibold" style={{ color: '#049fd9' }}>{c}</span> : <span className="font-mono">{c}</span>))} />
                   <button className="mt-2 text-xs px-3 py-1 rounded text-white" style={{ background: '#049fd9' }}>+ Add Template</button>
                 </div>
-                <div className="p-4 border border-border rounded bg-card">
-                  <div className="text-xs font-semibold mb-2" style={{ color: '#333' }}>External CA (SCEP)</div>
-                  <div className="text-xs" style={{ color: '#888' }}>No external SCEP servers configured</div>
-                  <button className="mt-2 text-xs px-3 py-1 rounded text-white" style={{ background: '#049fd9' }}>+ Add External CA</button>
-                </div>
               </div>
             )}
             {certTab === 'csr' && (
@@ -245,36 +241,43 @@ const Administration = () => {
           </>
         )}
 
+        {/* ============= BACKUP & RESTORE ============= */}
+        {active === 'backup-restore' && <BackupRestorePanel />}
+
+        {/* ============= PATCH MANAGEMENT ============= */}
+        {active === 'patch-mgmt' && (
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2"><Wrench size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Patch Management</span></div>
+              <button className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>Install Patch</button>
+            </div>
+            <ISETable headers={['Patch Name', 'Version', 'Installed Date', 'Installed By', 'Status']}
+              rows={patchHistory.map(p => [
+                <span className="font-mono text-[11px]" style={{ color: '#049fd9' }}>{p.name}</span>,
+                <span className="font-semibold">{p.version}</span>,
+                <span className="font-mono" style={{ color: '#888' }}>{p.installedDate}</span>,
+                p.installedBy,
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: p.status === 'Applied' ? '#6cc04a20' : '#fbab1830', color: p.status === 'Applied' ? '#3d7a2a' : '#b47a00' }}>{p.status}</span>,
+              ])} />
+          </>
+        )}
+
+        {/* ============= SETTINGS ============= */}
         {active === 'settings' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Settings size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>System Settings</span></div>
             <div className="flex items-center border-b border-border mb-3">
               {([['general', 'General'], ['eap-tls', 'EAP-TLS'], ['radius', 'RADIUS'], ['profiler', 'Profiler'], ['posture', 'Posture'], ['pxgrid', 'pxGrid'], ['logging', 'Logging']] as const).map(([key, label]) => (
-                <button key={key} className="px-3 py-1.5 text-xs font-medium border-b-2 transition-colors"
-                  style={{ color: settingsTab === key ? '#049fd9' : '#666', borderBottomColor: settingsTab === key ? '#049fd9' : 'transparent' }}
-                  onClick={() => setSettingsTab(key)}>{label}</button>
+                <button key={key} className="px-3 py-1.5 text-xs font-medium border-b-2 transition-colors" style={{ color: settingsTab === key ? '#049fd9' : '#666', borderBottomColor: settingsTab === key ? '#049fd9' : 'transparent' }} onClick={() => setSettingsTab(key)}>{label}</button>
               ))}
             </div>
-
             {settingsTab === 'general' && (
               <div className="border border-border rounded bg-card p-4 space-y-4 text-xs">
-                {[
-                  { label: 'Host Name', value: 'ise-pan01' },
-                  { label: 'Domain Name', value: 'corp.local' },
-                  { label: 'Time Zone', value: 'America/Los_Angeles (UTC-8)' },
-                  { label: 'NTP Server', value: '10.1.1.1, 10.1.1.2' },
-                  { label: 'DNS Server', value: '10.1.1.5, 10.1.1.6' },
-                  { label: 'SMTP Server', value: 'smtp.corp.local' },
-                  { label: 'Alarm Notification Email', value: 'ise-alerts@corp.local' },
-                ].map(s => (
-                  <div key={s.label} className="flex items-center">
-                    <span className="w-52 font-medium" style={{ color: '#555' }}>{s.label}</span>
-                    <span className="font-mono" style={{ color: '#333' }}>{s.value}</span>
-                  </div>
+                {[{ label: 'Host Name', value: 'ise-pan01' }, { label: 'Domain Name', value: 'corp.local' }, { label: 'Time Zone', value: 'America/Los_Angeles (UTC-8)' }, { label: 'NTP Server', value: '10.1.1.1, 10.1.1.2' }, { label: 'DNS Server', value: '10.1.1.5, 10.1.1.6' }, { label: 'SMTP Server', value: 'smtp.corp.local' }, { label: 'Alarm Notification Email', value: 'ise-alerts@corp.local' }].map(s => (
+                  <div key={s.label} className="flex items-center"><span className="w-52 font-medium" style={{ color: '#555' }}>{s.label}</span><span className="font-mono" style={{ color: '#333' }}>{s.value}</span></div>
                 ))}
               </div>
             )}
-
             {settingsTab === 'eap-tls' && (
               <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
                 <SettingSwitchRow label="Session Resume" checked={systemSettings.eapTls.sessionResume} />
@@ -285,7 +288,6 @@ const Administration = () => {
                 <SettingRow label="CRL Distribution URL" value={systemSettings.eapTls.crlUrl} mono />
               </div>
             )}
-
             {settingsTab === 'radius' && (
               <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
                 <SettingSwitchRow label="Suppress Anomalous Clients" checked={systemSettings.radius.suppressAnomalousClients} />
@@ -297,21 +299,18 @@ const Administration = () => {
                 <SettingRow label="Suppress Duration" value={`${systemSettings.radius.suppressDuration} seconds`} />
               </div>
             )}
-
             {settingsTab === 'profiler' && (
               <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
                 <SettingRow label="CoA Type" value={systemSettings.profiler.coaType} />
                 <SettingSwitchRow label="Endpoint Attribute Filter" checked={systemSettings.profiler.endpointAttributeFilter} />
                 <SettingRow label="Profiling Delay on CoA" value={`${systemSettings.profiler.profilingDelayOnCoA} seconds`} />
-                <div className="border-t border-border pt-2 mt-2">
-                  <div className="font-semibold mb-2" style={{ color: '#333' }}>NMAP Scan Settings</div>
+                <div className="border-t border-border pt-2 mt-2"><div className="font-semibold mb-2" style={{ color: '#333' }}>NMAP Scan Settings</div>
                   <SettingSwitchRow label="NMAP Enabled" checked={systemSettings.profiler.nmap.enabled} />
                   <SettingRow label="Scan Subnets" value={systemSettings.profiler.nmap.scanSubnets} mono />
-                  <SettingSwitchRow label="Skip NMAP for Known Endpoints" checked={systemSettings.profiler.nmap.skipNmapScanForKnown} />
+                  <SettingSwitchRow label="Skip NMAP for Known" checked={systemSettings.profiler.nmap.skipNmapScanForKnown} />
                 </div>
               </div>
             )}
-
             {settingsTab === 'posture' && (
               <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
                 <SettingRow label="Posture Lease" value={`${systemSettings.posture.postureLease} days`} />
@@ -322,7 +321,6 @@ const Administration = () => {
                 <SettingSwitchRow label="Stealth Mode" checked={systemSettings.posture.stealthMode} />
               </div>
             )}
-
             {settingsTab === 'pxgrid' && (
               <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
                 <SettingRow label="pxGrid Node" value={systemSettings.pxGrid.pxGridNode} mono />
@@ -332,40 +330,30 @@ const Administration = () => {
                 <SettingSwitchRow label="Password-Based" checked={systemSettings.pxGrid.passwordBased} />
               </div>
             )}
-
             {settingsTab === 'logging' && (
               <div className="space-y-3">
                 <div className="border border-border rounded bg-card p-4 text-xs">
                   <div className="font-semibold mb-2" style={{ color: '#333' }}>Logging Targets</div>
                   <ISETable headers={['Name', 'Type', 'Severity', 'Status']}
                     rows={systemSettings.logging.targets.map(t => [
-                      <span className="font-semibold" style={{ color: '#049fd9' }}>{t.name}</span>,
-                      t.type,
+                      <span className="font-semibold" style={{ color: '#049fd9' }}>{t.name}</span>, t.type,
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: t.severity === 'ERROR' ? '#cc000020' : t.severity === 'WARN' ? '#fbab1830' : '#049fd920', color: t.severity === 'ERROR' ? '#cc0000' : t.severity === 'WARN' ? '#b47a00' : '#049fd9' }}>{t.severity}</span>,
                       t.status,
                     ])} />
                 </div>
                 <div className="border border-border rounded bg-card p-4 text-xs">
                   <div className="font-semibold mb-2" style={{ color: '#333' }}>Collection Filters</div>
-                  <div className="space-y-2">
-                    {systemSettings.logging.collectionFilters.map(f => (
-                      <div key={f.name} className="flex items-center gap-2">
-                        <Switch defaultChecked={f.enabled} className="scale-75" />
-                        <span style={{ color: '#333' }}>{f.name}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="space-y-2">{systemSettings.logging.collectionFilters.map(f => (
+                    <div key={f.name} className="flex items-center gap-2"><Switch defaultChecked={f.enabled} className="scale-75" /><span style={{ color: '#333' }}>{f.name}</span></div>
+                  ))}</div>
                 </div>
               </div>
             )}
-
-            <div className="flex justify-end mt-3">
-              <Button size="sm" style={{ background: '#049fd9' }}>Save Settings</Button>
-            </div>
+            <div className="flex justify-end mt-3"><Button size="sm" style={{ background: '#049fd9' }}>Save Settings</Button></div>
           </>
         )}
 
-        {/* Network Devices */}
+        {/* ============= NETWORK DEVICES ============= */}
         {active === 'network-devices' && (
           <>
             <div className="flex items-center justify-between mb-2">
@@ -378,8 +366,7 @@ const Administration = () => {
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{d.name}</span>,
                 <span className="font-mono">{d.ip}</span>,
                 <span style={{ color: '#666' }}>{d.type}</span>,
-                d.location,
-                d.profile,
+                d.location, d.profile,
                 d.tacacs ? <CheckCircle size={12} style={{ color: '#6cc04a' }} /> : <XCircle size={12} style={{ color: '#ccc' }} />,
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#6cc04a20', color: '#3d7a2a' }}>{d.status}</span>,
               ])}
@@ -397,8 +384,6 @@ const Administration = () => {
                     <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Type</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Switch</option><option>Wireless Controller</option><option>Firewall</option><option>VPN</option><option>Router</option></select></div>
                     <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Location</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Building A</option><option>Building B</option><option>Data Center</option><option>DMZ</option></select></div>
                   </div>
-                  <div className="flex items-center gap-2"><input type="checkbox" /><span style={{ color: '#555' }}>Enable TACACS+ Authentication</span></div>
-                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>SNMP RO Community</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" defaultValue="public" /></div>
                 </div>
                 <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDeviceOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => setAddDeviceOpen(false)}>Save</Button></DialogFooter>
               </DialogContent>
@@ -409,21 +394,27 @@ const Administration = () => {
         {active === 'ndg' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Layers size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Device Groups</span></div>
-            <div className="space-y-3">
-              {networkDeviceGroups.map(g => (
-                <div key={g.id} className="border border-border rounded bg-card p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-semibold" style={{ color: '#333' }}>{g.name}</span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: '#049fd920', color: '#049fd9' }}>{g.type}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {g.children.map(c => (
-                      <span key={c} className="px-2 py-1 border border-border rounded text-xs" style={{ color: '#555' }}>{g.name}#{c}</span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <div className="space-y-3">{networkDeviceGroups.map(g => (
+              <div key={g.id} className="border border-border rounded bg-card p-3">
+                <div className="flex items-center gap-2 mb-2"><span className="text-xs font-semibold" style={{ color: '#333' }}>{g.name}</span><span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: '#049fd920', color: '#049fd9' }}>{g.type}</span></div>
+                <div className="flex flex-wrap gap-2">{g.children.map(c => <span key={c} className="px-2 py-1 border border-border rounded text-xs" style={{ color: '#555' }}>{g.name}#{c}</span>)}</div>
+              </div>
+            ))}</div>
+          </>
+        )}
+
+        {/* ============= NETWORK DEVICE PROFILES ============= */}
+        {active === 'ndp' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Router size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Device Profiles</span></div>
+            <ISETable headers={['Profile Name', 'Vendor', 'CoA Type', 'URL Redirect', 'Description']}
+              rows={networkDeviceProfiles.map(p => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
+                p.vendor,
+                <span className="font-mono">{p.coaType}</span>,
+                <span className="font-mono text-[11px]">{p.urlRedirect}</span>,
+                <span style={{ color: '#666' }}>{p.description}</span>,
+              ])} />
           </>
         )}
 
@@ -431,14 +422,29 @@ const Administration = () => {
           <>
             <div className="flex items-center gap-2 mb-2"><Globe size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>External RADIUS Servers</span></div>
             <ISETable headers={['Name', 'Host IP', 'Auth Port', 'Acct Port', 'Shared Secret', 'Timeout', 'Status']}
-              rows={[
-                ['RADIUS-Proxy-01', '10.5.1.10', '1812', '1813', '●●●●●●●●', '5s', 'Active'],
-                ['RADIUS-Proxy-02', '10.5.1.11', '1812', '1813', '●●●●●●●●', '5s', 'Active'],
-              ].map(r => r.map((c, i) => i === 0 ? <span className="font-semibold" style={{ color: '#049fd9' }}>{c}</span> : <span className="font-mono">{c}</span>))} />
+              rows={[['RADIUS-Proxy-01', '10.5.1.10', '1812', '1813', '●●●●●●●●', '5s', 'Active'], ['RADIUS-Proxy-02', '10.5.1.11', '1812', '1813', '●●●●●●●●', '5s', 'Active']].map(r => r.map((c, i) => i === 0 ? <span className="font-semibold" style={{ color: '#049fd9' }}>{c}</span> : <span className="font-mono">{c}</span>))} />
           </>
         )}
 
-        {/* Identity Management */}
+        {/* ============= RADIUS SERVER SEQUENCES ============= */}
+        {active === 'radius-sequences' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Layers size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>RADIUS Server Sequences</span></div>
+            <ISETable headers={['Sequence Name', 'Servers', 'Strip Prefix', 'Strip Suffix', 'Description']}
+              rows={[
+                ['Use_Local', 'Local (ISE)', 'No', 'No', 'Use local ISE RADIUS server'],
+                ['Proxy_Sequence', 'RADIUS-Proxy-01 → RADIUS-Proxy-02', 'Yes', 'No', 'Proxy to external RADIUS with failover'],
+              ].map(r => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{r[0]}</span>,
+                <span className="font-mono text-[11px]" style={{ color: '#666' }}>{r[1]}</span>,
+                <span className="font-mono">{r[2]}</span>,
+                <span className="font-mono">{r[3]}</span>,
+                <span style={{ color: '#666' }}>{r[4]}</span>,
+              ])} />
+          </>
+        )}
+
+        {/* ============= IDENTITY MANAGEMENT ============= */}
         {active === 'internal-users' && (
           <>
             <div className="flex items-center justify-between mb-2">
@@ -477,11 +483,7 @@ const Administration = () => {
           <>
             <div className="flex items-center gap-2 mb-2"><Database size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Identity Groups</span></div>
             <ISETable headers={['Group Name', 'Description', 'Members']}
-              rows={identityGroupsList.map(g => [
-                <span className="font-semibold" style={{ color: '#049fd9' }}>{g.name}</span>,
-                <span style={{ color: '#666' }}>{g.description}</span>,
-                <span className="font-mono font-bold">{g.members.toLocaleString()}</span>,
-              ])} />
+              rows={identityGroupsList.map(g => [<span className="font-semibold" style={{ color: '#049fd9' }}>{g.name}</span>, <span style={{ color: '#666' }}>{g.description}</span>, <span className="font-mono font-bold">{g.members.toLocaleString()}</span>])} />
           </>
         )}
 
@@ -519,6 +521,7 @@ const Administration = () => {
           </>
         )}
 
+        {/* ============= ADMIN USERS ============= */}
         {active === 'admin-users' && (
           <>
             <div className="flex items-center justify-between mb-2">
@@ -572,6 +575,54 @@ const Administration = () => {
               ])} />
           </>
         )}
+
+        {/* ============= SYSTEM CONFIGURATION ============= */}
+        {active === 'smtp' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Globe size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>SMTP Server Configuration</span></div>
+            <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
+              {[['SMTP Server', smtpConfig.server], ['Port', String(smtpConfig.port)], ['Use TLS', smtpConfig.useTLS ? 'Yes' : 'No'], ['Username', smtpConfig.username], ['From Address', smtpConfig.fromAddress], ['Status', smtpConfig.status]].map(([l, v]) => (
+                <div key={l} className="flex items-center"><span className="w-40 font-medium" style={{ color: '#555' }}>{l}</span><span className="font-mono" style={{ color: '#333' }}>{v}</span></div>
+              ))}
+            </div>
+            <div className="flex justify-end mt-3"><Button size="sm" style={{ background: '#049fd9' }}>Test Connection</Button></div>
+          </>
+        )}
+
+        {active === 'ntp' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Globe size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>NTP Servers</span></div>
+            <ISETable headers={['NTP Server IP', 'Status', 'Stratum', 'Offset']}
+              rows={ntpServers.map(n => [
+                <span className="font-mono" style={{ color: '#049fd9' }}>{n.ip}</span>,
+                <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> {n.status}</span>,
+                <span className="font-mono">{n.stratum}</span>,
+                <span className="font-mono">{n.offset}</span>,
+              ])} />
+          </>
+        )}
+
+        {active === 'ers' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Plug size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>ERS (External RESTful Services) / API Gateway</span></div>
+            <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
+              {[['ERS Enabled', ersApiSettings.enabled ? 'Yes' : 'No'], ['Port', String(ersApiSettings.port)], ['CORS Allowed', ersApiSettings.corsAllowed ? 'Yes' : 'No'], ['Max Sessions', String(ersApiSettings.maxSessions)], ['SDK Documentation', ersApiSettings.documentation], ['Status', ersApiSettings.status]].map(([l, v]) => (
+                <div key={l} className="flex items-center"><span className="w-40 font-medium" style={{ color: '#555' }}>{l}</span><span className="font-mono text-[11px]" style={{ color: '#333' }}>{v}</span></div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {active === 'data-connect' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Database size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Data Connect (ODBC)</span></div>
+            <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
+              {[['Enabled', dataConnectSettings.enabled ? 'Yes' : 'No'], ['Port', String(dataConnectSettings.port)], ['ODBC Name', dataConnectSettings.odbc], ['Max Connections', String(dataConnectSettings.maxConnections)], ['Status', dataConnectSettings.status], ['Password', dataConnectSettings.password]].map(([l, v]) => (
+                <div key={l} className="flex items-center"><span className="w-40 font-medium" style={{ color: '#555' }}>{l}</span><span className="font-mono" style={{ color: '#333' }}>{v}</span></div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -591,18 +642,11 @@ const ISETable = ({ headers, rows, onRowClick }: { headers: string[]; rows: Reac
 );
 
 const SettingRow = ({ label, value, mono }: { label: string; value: string; mono?: boolean }) => (
-  <div className="flex items-center">
-    <span className="w-52 font-medium" style={{ color: '#555' }}>{label}</span>
-    <span className={mono ? 'font-mono' : ''} style={{ color: '#333' }}>{value}</span>
-  </div>
+  <div className="flex items-center"><span className="w-52 font-medium" style={{ color: '#555' }}>{label}</span><span className={mono ? 'font-mono' : ''} style={{ color: '#333' }}>{value}</span></div>
 );
 
 const SettingSwitchRow = ({ label, checked }: { label: string; checked: boolean }) => (
-  <div className="flex items-center gap-2">
-    <span className="w-52 font-medium" style={{ color: '#555' }}>{label}</span>
-    <Switch defaultChecked={checked} className="scale-75" />
-    <span style={{ color: '#888' }}>{checked ? 'Enabled' : 'Disabled'}</span>
-  </div>
+  <div className="flex items-center gap-2"><span className="w-52 font-medium" style={{ color: '#555' }}>{label}</span><Switch defaultChecked={checked} className="scale-75" /><span style={{ color: '#888' }}>{checked ? 'Enabled' : 'Disabled'}</span></div>
 );
 
 export default Administration;

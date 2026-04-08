@@ -10,6 +10,8 @@ import Operations from "./pages/Operations";
 import Policy from "./pages/Policy";
 import WorkCenters from "./pages/WorkCenters";
 import Administration from "./pages/Administration";
+import ThreatContainment from "./pages/ThreatContainment";
+import PxGrid from "./pages/PxGrid";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,8 @@ const App = () => (
               <Route path="/policy" element={<Policy />} />
               <Route path="/work-centers" element={<WorkCenters />} />
               <Route path="/administration" element={<Administration />} />
+              <Route path="/threat-containment" element={<ThreatContainment />} />
+              <Route path="/pxgrid" element={<PxGrid />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
