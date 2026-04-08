@@ -163,16 +163,27 @@ const Policy = () => {
             <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Authorization Profiles</span></div><button data-walkthrough="add-profile-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>+ Add Profile</button></div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Results &gt; Authorization &gt; Authorization Profiles. Click a profile to view Common Tasks and RADIUS attributes.</div>
             <Table headers={['Name', 'Type', 'Description', 'Access Type', 'VLAN', 'DACL']}
-              rows={authorizationProfiles.map(p => [
+              rows={sim.authzProfiles.map(p => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
                 p.type, <span style={{ color: '#666' }}>{p.description}</span>,
                 <span className="font-mono">{p.accessType}</span>,
                 <span className="font-mono" style={{ color: '#888' }}>{p.vlan || '—'}</span>,
                 <span className="font-mono text-[11px]" style={{ color: '#888' }}>{p.dacl || '—'}</span>,
               ])}
-              onRowClick={(i) => { setSelectedProfile(authorizationProfiles[i]); setProfileOpen(true); }}
+              onRowClick={(i) => { setSelectedProfile(sim.authzProfiles[i]); setProfileOpen(true); }}
             />
             <AuthzProfileDetailDialog profile={selectedProfile} open={profileOpen} onOpenChange={setProfileOpen} />
+            {/* Add Profile Dialog */}
+            <Dialog open={addProfileOpen} onOpenChange={setAddProfileOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader><DialogTitle className="text-sm">Add Authorization Profile</DialogTitle></DialogHeader>
+                <div className="space-y-3 text-xs">
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Profile Name *</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="e.g. Lab_Permit" /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Access Type</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newProfileAccess} onChange={e => setNewProfileAccess(e.target.value)}><option>ACCESS_ACCEPT</option><option>ACCESS_REJECT</option></select></div>
+                </div>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddProfileOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={handleAddProfile}>Create</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         )}
 
