@@ -8,11 +8,33 @@ export const generateMacAddress = () => {
 export const generateIP = () =>
   `10.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
 
+// Generate ISE-format session ID: {nas_ip_hex}:{port_hex}/{timestamp_hex}/{seq}
+const generateSessionId = (nasIP: string) => {
+  const parts = nasIP.split('.').map(p => parseInt(p).toString(16).padStart(2, '0'));
+  const nodeHex = parts.join('');
+  const portHex = Math.floor(Math.random() * 48).toString(16).padStart(4, '0');
+  const tsHex = Math.floor(Date.now() / 1000).toString(16);
+  const seq = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+  return `${nodeHex}:${portHex}/${tsHex}/${seq}`;
+};
+
 const profiles = ['Cisco-Device', 'Apple-MacBook', 'Windows10-Workstation', 'HP-Printer', 'Cisco-IP-Phone', 'Android', 'Linux-Workstation', 'Unknown'];
 const identityGroups = ['Employee', 'Guest', 'Contractor', 'BYOD', 'IOT', 'Profiled', 'Unknown'];
 const usernames = ['jsmith', 'admin', 'jdoe', 'mwilson', 'agarcia', 'bchen', 'host/DESKTOP-A1B2C3', 'host/LAPTOP-X4Y5Z6', 'guest_user01', 'contractor_01'];
 const servers = ['ise-pan01', 'ise-psn01', 'ise-psn02', 'ise-mnt01'];
 const nasIPs = ['10.1.100.1', '10.1.100.2', '10.2.200.1', '10.3.50.1', '172.16.1.1'];
+
+// Official ISE 3.3 failure reason codes from message catalog
+const failureReasons = [
+  '5400 Authentication failed',
+  '22056 Subject not found in the applicable identity store(s)',
+  '22028 Authentication failed and target identity store is unavailable',
+  '12514 EAP-TLS handshake failed',
+  '5440 Endpoint abandoned EAP session and started new',
+  '5405 RADIUS Request dropped',
+  '22040 Wrong password or invalid shared secret',
+  '5434 Endpoint conducted several failed authentications of the same scenario',
+];
 
 export const generateEndpoints = (count: number) =>
   Array.from({ length: count }, (_, i) => ({
@@ -36,22 +58,23 @@ export const generateRadiusLogs = (count: number) => {
   const now = Date.now();
   return Array.from({ length: count }, (_, i) => {
     const passed = Math.random() > 0.2;
+    const nasIP = nasIPs[Math.floor(Math.random() * nasIPs.length)];
     return {
       id: i + 1,
       time: new Date(now - i * 3000 - Math.random() * 5000).toISOString(),
       status: passed ? 'Pass' : 'Fail',
-      detail: passed ? 'Authentication Succeeded' : (Math.random() > 0.5 ? 'Wrong Password' : 'Unknown User'),
+      detail: passed ? '5200 Authentication succeeded' : failureReasons[Math.floor(Math.random() * failureReasons.length)],
       username: usernames[Math.floor(Math.random() * usernames.length)],
       endpointId: generateMacAddress(),
       identityGroup: identityGroups[Math.floor(Math.random() * identityGroups.length)],
       server: servers[Math.floor(Math.random() * servers.length)],
-      nasIP: nasIPs[Math.floor(Math.random() * nasIPs.length)],
+      nasIP,
       authProtocol: Math.random() > 0.5 ? 'PEAP (EAP-MSCHAPv2)' : 'EAP-TLS',
       policySet: ['Corporate_Wired', 'Corporate_Wireless', 'Guest_Portal', 'VPN_Remote'][Math.floor(Math.random() * 4)],
       authzProfile: ['PermitAccess', 'DenyAccess', 'CWA_Redirect', 'BYOD_Access'][Math.floor(Math.random() * 4)],
       nasPort: `GigabitEthernet1/0/${Math.floor(Math.random() * 48)}`,
-      sessionId: `0A0${Math.floor(Math.random() * 9)}${Math.random().toString(16).slice(2, 10).toUpperCase()}`,
-      failureReason: passed ? '' : ['24408 User not found', '22056 Subject not found in the applicable identity store(s)', '22028 Authentication failed - wrong password', '12514 EAP-TLS handshake failed'][Math.floor(Math.random() * 4)],
+      sessionId: generateSessionId(nasIP),
+      failureReason: passed ? '' : failureReasons[Math.floor(Math.random() * failureReasons.length)],
     };
   });
 };
@@ -59,21 +82,24 @@ export const generateRadiusLogs = (count: number) => {
 export const generateLiveSessions = (count: number) => {
   const now = Date.now();
   const authzPolicies = ['PermitAccess', 'BYOD_Access', 'Guest_Access', 'VPN_Full_Access', 'Limited_Access', 'IOT_Restricted'];
-  return Array.from({ length: count }, (_, i) => ({
-    id: i + 1,
-    sessionId: `0A0${Math.floor(Math.random() * 9)}${Math.random().toString(16).slice(2, 10).toUpperCase()}`,
-    username: usernames[Math.floor(Math.random() * usernames.length)],
-    ip: generateIP(),
-    mac: generateMacAddress(),
-    nasIP: nasIPs[Math.floor(Math.random() * nasIPs.length)],
-    server: servers[Math.floor(Math.random() * servers.length)],
-    authzPolicy: authzPolicies[Math.floor(Math.random() * authzPolicies.length)],
-    started: new Date(now - Math.floor(Math.random() * 86400000)).toISOString(),
-    duration: `${Math.floor(Math.random() * 24)}h ${Math.floor(Math.random() * 60)}m`,
-    protocol: Math.random() > 0.5 ? 'RADIUS' : '802.1X',
-    postureStatus: ['Compliant', 'Non-Compliant', 'Unknown', 'Pending'][Math.floor(Math.random() * 4)],
-    securityGroup: ['Employees', 'Guests', 'BYOD_Devices', 'Contractors', 'IOT_Devices'][Math.floor(Math.random() * 5)],
-  }));
+  return Array.from({ length: count }, (_, i) => {
+    const nasIP = nasIPs[Math.floor(Math.random() * nasIPs.length)];
+    return {
+      id: i + 1,
+      sessionId: generateSessionId(nasIP),
+      username: usernames[Math.floor(Math.random() * usernames.length)],
+      ip: generateIP(),
+      mac: generateMacAddress(),
+      nasIP,
+      server: servers[Math.floor(Math.random() * servers.length)],
+      authzPolicy: authzPolicies[Math.floor(Math.random() * authzPolicies.length)],
+      started: new Date(now - Math.floor(Math.random() * 86400000)).toISOString(),
+      duration: `${Math.floor(Math.random() * 24)}h ${Math.floor(Math.random() * 60)}m`,
+      protocol: Math.random() > 0.5 ? 'RADIUS' : '802.1X',
+      postureStatus: ['Compliant', 'Non-Compliant', 'Unknown', 'Pending'][Math.floor(Math.random() * 4)],
+      securityGroup: ['Employees', 'Guests', 'BYOD_Devices', 'Contractors', 'IOT_Devices'][Math.floor(Math.random() * 5)],
+    };
+  });
 };
 
 export const alarms = [
@@ -93,8 +119,9 @@ export const policySets = [
   { id: 3, name: 'Guest_Portal', status: 'Enabled', conditions: 'Wireless_MAB', authPolicy: 'Guest Portal Sequence', authzPolicy: 'Guest_Access', hits: 3456 },
   { id: 4, name: 'BYOD_Onboarding', status: 'Enabled', conditions: 'BYOD_Portal', authPolicy: 'Certificate Auth Profile', authzPolicy: 'BYOD_Access', hits: 1234 },
   { id: 5, name: 'VPN_Remote', status: 'Enabled', conditions: 'VPN_Tunnel', authPolicy: 'AD with RSA', authzPolicy: 'VPN_Full_Access', hits: 2890 },
-  { id: 6, name: 'IOT_Devices', status: 'Disabled', conditions: 'MAB', authPolicy: 'Internal Endpoints', authzPolicy: 'IOT_Restricted', hits: 567 },
+  { id: 6, name: 'IOT_Devices', status: 'Monitor Only', conditions: 'MAB', authPolicy: 'Internal Endpoints', authzPolicy: 'IOT_Restricted', hits: 567 },
   { id: 7, name: 'Contractor_Access', status: 'Enabled', conditions: 'Wired_MAB', authPolicy: 'Contractor_DB', authzPolicy: 'Limited_Access', hits: 890 },
+  { id: 8, name: 'Default', status: 'Enabled', conditions: 'Default', authPolicy: 'Internal Users', authzPolicy: 'DenyAccess', hits: 245 },
 ];
 
 export const authenticationPolicies = [
@@ -119,14 +146,16 @@ export const authorizationPolicies = [
 export const authorizationProfiles = [
   { id: 1, name: 'PermitAccess', type: 'Standard', description: 'Permits full network access', accessType: 'ACCESS_ACCEPT', vlan: '', dacl: '' },
   { id: 2, name: 'DenyAccess', type: 'Standard', description: 'Denies all network access', accessType: 'ACCESS_REJECT', vlan: '', dacl: '' },
-  { id: 3, name: 'CWA_Redirect', type: 'Standard', description: 'Central Web Auth redirect for guests', accessType: 'ACCESS_ACCEPT', vlan: 'Guest_VLAN', dacl: 'ACL-WEBAUTH-REDIRECT' },
-  { id: 4, name: 'BYOD_Access', type: 'Standard', description: 'BYOD onboarding access with limited scope', accessType: 'ACCESS_ACCEPT', vlan: 'BYOD_VLAN', dacl: 'PERMIT_ALL_IPV4_TRAFFIC' },
-  { id: 5, name: 'IOT_Restricted', type: 'Standard', description: 'Restricted access for IoT devices', accessType: 'ACCESS_ACCEPT', vlan: 'IOT_VLAN', dacl: 'ACL-IOT-RESTRICT' },
-  { id: 6, name: 'VPN_Full_Access', type: 'Standard', description: 'Full VPN access for remote workers', accessType: 'ACCESS_ACCEPT', vlan: '', dacl: 'PERMIT_ALL_IPV4_TRAFFIC' },
-  { id: 7, name: 'Limited_Access', type: 'Standard', description: 'Limited network scope for contractors', accessType: 'ACCESS_ACCEPT', vlan: 'Contractor_VLAN', dacl: 'ACL-CONTRACTOR-LIMITED' },
-  { id: 8, name: 'Guest_Access', type: 'Standard', description: 'Internet-only guest access', accessType: 'ACCESS_ACCEPT', vlan: 'Guest_VLAN', dacl: 'ACL-GUEST-INTERNET' },
-  { id: 9, name: 'Posture_Remediation', type: 'Standard', description: 'Remediation VLAN for non-compliant', accessType: 'ACCESS_ACCEPT', vlan: 'Remediation_VLAN', dacl: 'ACL-POSTURE-REMEDIATE' },
-  { id: 10, name: 'Blackhole_Stolen', type: 'Standard', description: 'Redirect to stolen device notification page', accessType: 'ACCESS_ACCEPT', vlan: 'Blackhole_VLAN', dacl: 'ACL-BLACKHOLE' },
+  { id: 3, name: 'Cisco_WebAuth', type: 'Standard', description: 'Cisco Web Authentication redirect', accessType: 'ACCESS_ACCEPT', vlan: '', dacl: 'ACL-WEBAUTH-REDIRECT' },
+  { id: 4, name: 'Blackhole_Wireless_Access', type: 'Standard', description: 'Blackhole wireless access for blocked devices', accessType: 'ACCESS_ACCEPT', vlan: 'Blackhole_VLAN', dacl: 'ACL-BLACKHOLE' },
+  { id: 5, name: 'CWA_Redirect', type: 'Standard', description: 'Central Web Auth redirect for guests', accessType: 'ACCESS_ACCEPT', vlan: 'Guest_VLAN', dacl: 'ACL-WEBAUTH-REDIRECT' },
+  { id: 6, name: 'BYOD_Access', type: 'Standard', description: 'BYOD onboarding access with limited scope', accessType: 'ACCESS_ACCEPT', vlan: 'BYOD_VLAN', dacl: 'PERMIT_ALL_IPV4_TRAFFIC' },
+  { id: 7, name: 'IOT_Restricted', type: 'Standard', description: 'Restricted access for IoT devices', accessType: 'ACCESS_ACCEPT', vlan: 'IOT_VLAN', dacl: 'ACL-IOT-RESTRICT' },
+  { id: 8, name: 'VPN_Full_Access', type: 'Standard', description: 'Full VPN access for remote workers', accessType: 'ACCESS_ACCEPT', vlan: '', dacl: 'PERMIT_ALL_IPV4_TRAFFIC' },
+  { id: 9, name: 'Limited_Access', type: 'Standard', description: 'Limited network scope for contractors', accessType: 'ACCESS_ACCEPT', vlan: 'Contractor_VLAN', dacl: 'ACL-CONTRACTOR-LIMITED' },
+  { id: 10, name: 'Guest_Access', type: 'Standard', description: 'Internet-only guest access', accessType: 'ACCESS_ACCEPT', vlan: 'Guest_VLAN', dacl: 'ACL-GUEST-INTERNET' },
+  { id: 11, name: 'Posture_Remediation', type: 'Standard', description: 'Remediation VLAN for non-compliant', accessType: 'ACCESS_ACCEPT', vlan: 'Remediation_VLAN', dacl: 'ACL-POSTURE-REMEDIATE' },
+  { id: 12, name: 'Blackhole_Stolen', type: 'Standard', description: 'Redirect to stolen device notification page', accessType: 'ACCESS_ACCEPT', vlan: 'Blackhole_VLAN', dacl: 'ACL-BLACKHOLE' },
 ];
 
 export const policyConditions = [
@@ -172,16 +201,16 @@ export const clientProvisioningResources = [
 ];
 
 export const deploymentNodes = [
-  { hostname: 'ise-pan01.corp.local', role: 'Primary Admin (PAN)', persona: 'Admin, Policy Service', status: 'Connected', ip: '10.1.1.10', version: '3.1.0.518', roles: { admin: true, monitoring: false, policyService: true }, probes: { netflow: true, dhcp: true, dhcpSpan: false, http: true, radius: true, nmap: false, dns: true, snmpQuery: false, snmpTrap: true, ad: true } },
-  { hostname: 'ise-mnt01.corp.local', role: 'Monitoring (MnT)', persona: 'Monitoring', status: 'Connected', ip: '10.1.1.11', version: '3.1.0.518', roles: { admin: false, monitoring: true, policyService: false }, probes: { netflow: false, dhcp: false, dhcpSpan: false, http: false, radius: false, nmap: false, dns: false, snmpQuery: false, snmpTrap: false, ad: false } },
-  { hostname: 'ise-psn01.corp.local', role: 'Policy Service (PSN)', persona: 'Policy Service', status: 'Connected', ip: '10.1.1.12', version: '3.1.0.518', roles: { admin: false, monitoring: false, policyService: true }, probes: { netflow: true, dhcp: true, dhcpSpan: true, http: true, radius: true, nmap: true, dns: true, snmpQuery: true, snmpTrap: true, ad: false } },
-  { hostname: 'ise-psn02.corp.local', role: 'Policy Service (PSN)', persona: 'Policy Service', status: 'Disconnected', ip: '10.1.1.13', version: '3.1.0.518', roles: { admin: false, monitoring: false, policyService: true }, probes: { netflow: true, dhcp: true, dhcpSpan: false, http: true, radius: true, nmap: false, dns: true, snmpQuery: false, snmpTrap: true, ad: false } },
+  { hostname: 'ise-pan01.corp.local', role: 'Primary Admin (PAN)', persona: 'Admin, Policy Service', status: 'Connected', ip: '10.1.1.10', version: '3.3.0.430', roles: { admin: true, monitoring: false, policyService: true }, probes: { netflow: true, dhcp: true, dhcpSpan: false, http: true, radius: true, nmap: false, dns: true, snmpQuery: false, snmpTrap: true, ad: true } },
+  { hostname: 'ise-mnt01.corp.local', role: 'Monitoring (MnT)', persona: 'Monitoring', status: 'Connected', ip: '10.1.1.11', version: '3.3.0.430', roles: { admin: false, monitoring: true, policyService: false }, probes: { netflow: false, dhcp: false, dhcpSpan: false, http: false, radius: false, nmap: false, dns: false, snmpQuery: false, snmpTrap: false, ad: false } },
+  { hostname: 'ise-psn01.corp.local', role: 'Policy Service (PSN)', persona: 'Policy Service', status: 'Connected', ip: '10.1.1.12', version: '3.3.0.430', roles: { admin: false, monitoring: false, policyService: true }, probes: { netflow: true, dhcp: true, dhcpSpan: true, http: true, radius: true, nmap: true, dns: true, snmpQuery: true, snmpTrap: true, ad: false } },
+  { hostname: 'ise-psn02.corp.local', role: 'Policy Service (PSN)', persona: 'Policy Service', status: 'Disconnected', ip: '10.1.1.13', version: '3.3.0.430', roles: { admin: false, monitoring: false, policyService: true }, probes: { netflow: true, dhcp: true, dhcpSpan: false, http: true, radius: true, nmap: false, dns: true, snmpQuery: false, snmpTrap: true, ad: false } },
 ];
 
 export const licenses = [
-  { id: 1, type: 'Base', total: 5000, consumed: 3247, status: 'Compliant', expiry: '2027-04-01', description: 'Basic network access, authentication, 802.1X' },
-  { id: 2, type: 'Plus', total: 2500, consumed: 1834, status: 'Compliant', expiry: '2027-04-01', description: 'Profiling, context visibility, feed service' },
-  { id: 3, type: 'Apex', total: 1000, consumed: 456, status: 'Compliant', expiry: '2027-04-01', description: 'Posture, BYOD onboarding, TC-NAC' },
+  { id: 1, type: 'Essentials', total: 5000, consumed: 3247, status: 'Compliant', expiry: '2027-04-01', description: 'Basic network access, authentication, 802.1X, Guest' },
+  { id: 2, type: 'Advantage', total: 2500, consumed: 1834, status: 'Compliant', expiry: '2027-04-01', description: 'Profiling, context visibility, feed service, BYOD' },
+  { id: 3, type: 'Premier', total: 1000, consumed: 456, status: 'Compliant', expiry: '2027-04-01', description: 'Posture, TC-NAC, pxGrid, Passive ID' },
   { id: 4, type: 'Device Admin', total: 500, consumed: 128, status: 'Compliant', expiry: '2027-04-01', description: 'TACACS+ device administration' },
   { id: 5, type: 'ISE VM', total: 4, consumed: 4, status: 'At Limit', expiry: '2027-04-01', description: 'Virtual machine instance licenses' },
 ];
@@ -211,7 +240,6 @@ export const adminUsers = [
   { id: 5, name: 'isebackup', email: 'backup@corp.local', role: 'System Admin', status: 'Disabled', lastLogin: '2026-03-01 02:00:00', groups: 'System Admin' },
 ];
 
-// Network Devices for Administration > Network Resources
 export const networkDevices = [
   { id: 1, name: 'SW-CORE-01', ip: '10.1.100.1', type: 'Cisco Catalyst 9300', location: 'Building A', ndg: 'All Device Types#Switch', profile: 'Cisco', status: 'Active', radiusSharedSecret: '●●●●●●●●', tacacs: true, snmpRO: 'public' },
   { id: 2, name: 'SW-ACCESS-01', ip: '10.1.100.2', type: 'Cisco Catalyst 9200', location: 'Building A - Floor 1', ndg: 'All Device Types#Switch', profile: 'Cisco', status: 'Active', radiusSharedSecret: '●●●●●●●●', tacacs: true, snmpRO: 'public' },
@@ -228,7 +256,6 @@ export const networkDeviceGroups = [
   { id: 3, name: 'IPSEC', type: 'IPSEC', children: ['Yes', 'No'] },
 ];
 
-// Identity Management
 export const internalUsers = [
   { id: 1, name: 'jsmith', firstName: 'John', lastName: 'Smith', email: 'jsmith@corp.local', identityGroup: 'Employee', status: 'Enabled', lastPasswordChange: '2026-03-15' },
   { id: 2, name: 'jdoe', firstName: 'Jane', lastName: 'Doe', email: 'jdoe@corp.local', identityGroup: 'Employee', status: 'Enabled', lastPasswordChange: '2026-03-20' },
@@ -257,7 +284,6 @@ export const externalIdentitySources = [
   { id: 4, name: 'SAML-Azure', type: 'SAML IdP', status: 'Active', joinPoint: 'login.microsoftonline.com', domain: 'corp.onmicrosoft.com', users: 0, groups: 0 },
 ];
 
-// Reports data
 export const reportCategories = [
   { name: 'Authentication Summary', description: 'Summary of RADIUS authentication activity', lastRun: '2026-04-08 09:00', records: 14523 },
   { name: 'Top Authentications by User', description: 'Most active users by authentication count', lastRun: '2026-04-08 09:00', records: 250 },
@@ -271,7 +297,6 @@ export const reportCategories = [
   { name: 'Posture Assessment', description: 'Endpoint compliance check results', lastRun: '2026-04-08 08:00', records: 567 },
 ];
 
-// ANC (Adaptive Network Control) endpoints
 export const ancEndpoints = [
   { id: 1, mac: 'AA:BB:CC:11:22:33', ip: '10.1.50.101', policy: 'ANC-Quarantine', status: 'Quarantined', appliedBy: 'admin', appliedAt: '2026-04-08 08:30:00', reason: 'Suspicious activity detected' },
   { id: 2, mac: 'DD:EE:FF:44:55:66', ip: '10.1.50.102', policy: 'ANC-Shutdown', status: 'Port Shutdown', appliedBy: 'admin', appliedAt: '2026-04-07 16:00:00', reason: 'Stolen device reported' },
@@ -279,15 +304,14 @@ export const ancEndpoints = [
 ];
 
 export const workCenterSections = [
-  { id: 'guest', name: 'Guest Access', description: 'Configure guest portals, sponsor groups, and guest policies', icon: 'Users', subItems: ['Portals & Components', 'Settings', 'Reports'] },
-  { id: 'byod', name: 'BYOD', description: 'Manage Bring Your Own Device onboarding and native supplicant provisioning', icon: 'Smartphone', subItems: ['BYOD Portal', 'My Devices Portal', 'Settings'] },
-  { id: 'device-admin', name: 'Device Administration', description: 'TACACS+ device administration for network equipment', icon: 'Server', subItems: ['Device Admin Policy Sets', 'TACACS Profiles', 'TACACS Command Sets'] },
-  { id: 'network-access', name: 'Network Access', description: 'Configure network access policies, policy sets, and conditions', icon: 'Network', subItems: ['Policy Sets', 'Authentication', 'Authorization'] },
-  { id: 'posture', name: 'Posture', description: 'Endpoint compliance checks and remediation policies', icon: 'Shield', subItems: ['Posture Policy', 'Posture Elements', 'Client Provisioning'] },
-  { id: 'trustsec', name: 'TrustSec', description: 'Software-defined segmentation with Security Group Tags (SGTs)', icon: 'Lock', subItems: ['TrustSec Policy', 'Security Groups', 'IP-SGT Mapping', 'SXP Devices', 'Egress Policy'] },
+  { id: 'network-access', name: 'Network Access', description: 'Configure network access policies, policy sets, and conditions', icon: 'Network', subItems: ['Overview', 'Policy Sets', 'Ext RADIUS Servers', 'External ID Sources', 'Network Devices'] },
+  { id: 'guest', name: 'Guest Access', description: 'Configure guest portals, sponsor groups, and guest policies', icon: 'Users', subItems: ['Overview', 'Portals & Components', 'Settings', 'Reports'] },
+  { id: 'trustsec', name: 'TrustSec', description: 'Software-defined segmentation with Security Group Tags (SGTs)', icon: 'Lock', subItems: ['Overview', 'Components', 'TrustSec Policy', 'Settings'] },
+  { id: 'byod', name: 'BYOD', description: 'Manage Bring Your Own Device onboarding and native supplicant provisioning', icon: 'Smartphone', subItems: ['Overview', 'Portals & Components', 'Settings'] },
+  { id: 'device-admin', name: 'Device Administration', description: 'TACACS+ device administration for network equipment', icon: 'Server', subItems: ['Overview', 'Device Admin Policy Sets', 'Policy Elements', 'Network Resources', 'Reports', 'Settings'] },
+  { id: 'posture', name: 'Posture', description: 'Endpoint compliance checks and remediation policies', icon: 'Shield', subItems: ['Overview', 'Policy Elements', 'Posture Policy', 'Client Provisioning', 'Settings'] },
 ];
 
-// TACACS data
 export const tacacsProfiles = [
   { id: 1, name: 'Shell_Admin', description: 'Full shell access with privilege 15', protocol: 'TACACS+', privilege: 15, status: 'Enabled' },
   { id: 2, name: 'Shell_ReadOnly', description: 'Read-only shell access with privilege 1', protocol: 'TACACS+', privilege: 1, status: 'Enabled' },
@@ -300,7 +324,6 @@ export const tacacsCommandSets = [
   { id: 3, name: 'DenyConfig', description: 'Deny all configuration commands', commands: 'deny configure .*', status: 'Enabled' },
 ];
 
-// Security Groups (TrustSec)
 export const securityGroups = [
   { id: 1, name: 'Employees', tag: 4, description: 'Corporate employees', icon: '🏢', learned: false },
   { id: 2, name: 'Guests', tag: 6, description: 'Guest users', icon: '👤', learned: false },
@@ -314,7 +337,6 @@ export const securityGroups = [
   { id: 10, name: 'Quarantine', tag: 255, description: 'Quarantined endpoints', icon: '⚠️', learned: false },
 ];
 
-// Posture policies
 export const posturePolicies = [
   { id: 1, name: 'Windows_AV_Check', os: 'Windows All', condition: 'AntiVirus Installed AND AntiVirus Definition Date < 3 days', remediationAction: 'Windows_AV_Remediation', status: 'Enabled' },
   { id: 2, name: 'Windows_Firewall', os: 'Windows All', condition: 'Windows Firewall Enabled', remediationAction: 'Enable_Firewall_Remediation', status: 'Enabled' },
@@ -323,7 +345,6 @@ export const posturePolicies = [
   { id: 5, name: 'USB_Storage', os: 'Windows All', condition: 'USB Mass Storage Disabled', remediationAction: 'USB_Block_Remediation', status: 'Disabled' },
 ];
 
-// Guest portals
 export const guestPortals = [
   { id: 1, name: 'Hotspot Portal', type: 'Hotspot', url: 'https://guest.corp.local:8443/hotspot', status: 'Active', theme: 'Default', authMethod: 'None (AUP only)' },
   { id: 2, name: 'Sponsored Guest Portal', type: 'Sponsored', url: 'https://guest.corp.local:8443/sponsored', status: 'Active', theme: 'Corporate', authMethod: 'Sponsor Approval' },

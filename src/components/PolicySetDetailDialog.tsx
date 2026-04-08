@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { authenticationPolicies, authorizationPolicies } from "@/lib/mockData";
-import { CheckCircle, XCircle, GripVertical, Plus } from "lucide-react";
+import { CheckCircle, XCircle, GripVertical, Plus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 interface PolicySetDetailDialogProps {
@@ -12,11 +12,14 @@ interface PolicySetDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+type PolicyStatus = 'Enabled' | 'Disabled' | 'Monitor Only';
+
 const PolicySetDetailDialog = ({ policySet, open, onOpenChange }: PolicySetDetailDialogProps) => {
   const [authnRules, setAuthnRules] = useState(authenticationPolicies.map((p, i) => ({ ...p, order: i })));
-  const [authzRules, setAuthzRules] = useState(authorizationPolicies.map((p, i) => ({ ...p, order: i })));
+  const [authzRules, setAuthzRules] = useState(authorizationPolicies.map((p, i) => ({ ...p, order: i, hits: Math.floor(Math.random() * 5000) })));
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragTable, setDragTable] = useState<'authn' | 'authz' | null>(null);
+  const [policyStatus, setPolicyStatus] = useState<PolicyStatus>((policySet?.status as PolicyStatus) || 'Enabled');
 
   const handleDragStart = useCallback((table: 'authn' | 'authz', index: number) => {
     setDragIndex(index);
@@ -49,29 +52,69 @@ const PolicySetDetailDialog = ({ policySet, open, onOpenChange }: PolicySetDetai
   };
 
   const handleAddAuthnRule = () => {
-    toast.info("New authentication rule added");
+    const newRule = {
+      id: authnRules.length + 100,
+      rule: `New_Rule_${authnRules.length + 1}`,
+      conditions: 'Click to edit',
+      allowedProtocols: 'Default Network Access',
+      identityStore: 'Internal Users',
+      status: 'Enabled',
+      order: authnRules.length,
+    };
+    setAuthnRules(prev => [...prev.slice(0, -1), newRule, prev[prev.length - 1]]);
+    toast.success("New authentication rule added above Default");
   };
 
   const handleAddAuthzRule = () => {
-    toast.info("New authorization rule added");
+    const newRule = {
+      id: authzRules.length + 100,
+      rule: `New_AuthzRule_${authzRules.length + 1}`,
+      conditions: 'Click to edit',
+      profile: 'PermitAccess',
+      securityGroup: 'Unknown',
+      status: 'Enabled',
+      order: authzRules.length,
+      hits: 0,
+    };
+    setAuthzRules(prev => [...prev.slice(0, -1), newRule, prev[prev.length - 1]]);
+    toast.success("New authorization rule added above Default Deny");
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-sm flex items-center gap-2">
             <span style={{ color: '#049fd9' }}>Policy Set:</span> {policySet.name}
           </DialogTitle>
         </DialogHeader>
 
+        {policyStatus === 'Monitor Only' && (
+          <div className="flex items-center gap-2 p-2 rounded text-[11px]" style={{ background: '#fef3cd', color: '#856404', border: '1px solid #ffeeba' }}>
+            <AlertTriangle size={14} />
+            <span><strong>Monitor Only Mode:</strong> This policy set will be evaluated but NOT enforced. Results are logged for review in Operations &gt; RADIUS &gt; Live Logs.</span>
+          </div>
+        )}
+
         <div className="border border-border rounded p-3 bg-card space-y-2 text-xs">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <FormRow label="Name" value={policySet.name} />
-            <FormRow label="Status">
-              <Switch defaultChecked={policySet.status === 'Enabled'} />
-              <span className="ml-1">{policySet.status}</span>
-            </FormRow>
+            <div className="flex items-center text-xs gap-2">
+              <span className="font-medium" style={{ color: '#555' }}>Status</span>
+              <select 
+                className="border border-border rounded px-2 py-0.5 text-xs bg-card"
+                value={policyStatus}
+                onChange={(e) => {
+                  setPolicyStatus(e.target.value as PolicyStatus);
+                  toast.info(`Policy set status changed to ${e.target.value}`);
+                }}
+              >
+                <option value="Enabled">Enabled</option>
+                <option value="Disabled">Disabled</option>
+                <option value="Monitor Only">Monitor Only</option>
+              </select>
+              <StatusIcon status={policyStatus} />
+            </div>
           </div>
           <FormRow label="Conditions" value={policySet.conditions} mono />
           <FormRow label="Description" value={`Policy set for ${policySet.conditions} authentication`} />
@@ -87,13 +130,13 @@ const PolicySetDetailDialog = ({ policySet, open, onOpenChange }: PolicySetDetai
             </button>
           </div>
           <DraggableTable
-            headers={['', '#', 'Rule Name', 'Status', 'Conditions', 'Allowed Protocols', 'Identity Store']}
+            headers={['', '#', 'Status', 'Rule Name', 'Conditions', 'Allowed Protocols', 'Identity Store']}
             rows={authnRules}
             renderRow={(p, i) => [
               <GripVertical size={10} style={{ color: '#ccc' }} className="cursor-grab" />,
               <span className="font-mono" style={{ color: '#999' }}>{i + 1}</span>,
+              <StatusDot status={p.status} />,
               <span className="font-semibold" style={{ color: '#049fd9' }}>{p.rule}</span>,
-              <StatusDot ok={p.status === 'Enabled'} />,
               <span className="font-mono text-[10px]" style={{ color: '#666' }}>{p.conditions}</span>,
               <span className="text-[10px]">{p.allowedProtocols}</span>,
               <span className="text-[10px]">{p.identityStore}</span>,
@@ -114,16 +157,22 @@ const PolicySetDetailDialog = ({ policySet, open, onOpenChange }: PolicySetDetai
             </button>
           </div>
           <DraggableTable
-            headers={['', '#', 'Rule Name', 'Status', 'Conditions', 'Authz Profile', 'Security Group']}
+            headers={['', '#', 'Status', 'Rule Name', 'Conditions', 'Results (Profiles)', 'Results (Security Groups)', 'Hits', 'Actions']}
             rows={authzRules}
             renderRow={(p, i) => [
               <GripVertical size={10} style={{ color: '#ccc' }} className="cursor-grab" />,
               <span className="font-mono" style={{ color: '#999' }}>{i + 1}</span>,
+              <StatusDot status={p.status} />,
               <span className="font-semibold" style={{ color: '#049fd9' }}>{p.rule}</span>,
-              <StatusDot ok={p.status === 'Enabled'} />,
               <span className="font-mono text-[10px]" style={{ color: '#666' }}>{p.conditions}</span>,
-              <span className="text-[10px]">{p.profile}</span>,
+              <span className="text-[10px]" style={{ color: '#333' }}>{p.profile}</span>,
               <span className="text-[10px]">{p.securityGroup}</span>,
+              <span className="font-mono text-[10px]" style={{ color: '#999' }}>{p.hits?.toLocaleString?.() || '0'}</span>,
+              <button className="text-[10px] px-1 rounded hover:bg-accent" style={{ color: '#cc0000' }} onClick={() => {
+                if (p.rule === 'Default_Deny') { toast.error("Cannot delete the Default Deny rule"); return; }
+                setAuthzRules(prev => prev.filter(r => r.id !== p.id));
+                toast.success(`Rule "${p.rule}" deleted`);
+              }}>✕</button>,
             ]}
             onDragStart={(i) => handleDragStart('authz', i)}
             onDragOver={handleDragOver}
@@ -148,8 +197,17 @@ const FormRow = ({ label, value, mono, children }: { label: string; value?: stri
   </div>
 );
 
-const StatusDot = ({ ok }: { ok: boolean }) =>
-  ok ? <CheckCircle size={12} style={{ color: '#6cc04a' }} /> : <XCircle size={12} style={{ color: '#999' }} />;
+const StatusIcon = ({ status }: { status: PolicyStatus }) => {
+  if (status === 'Enabled') return <CheckCircle size={12} style={{ color: '#6cc04a' }} />;
+  if (status === 'Monitor Only') return <AlertTriangle size={12} style={{ color: '#f0ad4e' }} />;
+  return <XCircle size={12} style={{ color: '#999' }} />;
+};
+
+const StatusDot = ({ status }: { status: string }) => {
+  if (status === 'Enabled') return <CheckCircle size={12} style={{ color: '#6cc04a' }} />;
+  if (status === 'Monitor Only') return <AlertTriangle size={12} style={{ color: '#f0ad4e' }} />;
+  return <XCircle size={12} style={{ color: '#999' }} />;
+};
 
 interface DraggableTableProps<T> {
   headers: string[];
@@ -167,7 +225,7 @@ function DraggableTable<T>({ headers, rows, renderRow, onDragStart, onDragOver, 
       <table className="w-full text-[11px]">
         <thead>
           <tr style={{ background: '#f0f0f0' }}>
-            {headers.map((h, i) => <th key={i} className="text-left p-1.5 font-semibold" style={{ color: '#555' }}>{h}</th>)}
+            {headers.map((h, i) => <th key={i} className="text-left p-1.5 font-semibold whitespace-nowrap" style={{ color: '#555' }}>{h}</th>)}
           </tr>
         </thead>
         <tbody>

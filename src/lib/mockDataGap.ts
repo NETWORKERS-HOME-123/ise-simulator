@@ -51,13 +51,16 @@ export const postureRemediations = [
 
 // ======================== DACLs ========================
 export const downloadableACLs = [
-  { id: 1, name: 'PERMIT_ALL_IPV4_TRAFFIC', description: 'Permits all IPv4 traffic', content: 'permit ip any any' },
-  { id: 2, name: 'ACL-WEBAUTH-REDIRECT', description: 'Web auth redirect ACL for CWA', content: 'deny udp any any eq 53\npermit tcp any any eq 53\ndeny ip any any' },
-  { id: 3, name: 'ACL-IOT-RESTRICT', description: 'Restricted access for IoT devices', content: 'permit udp any any eq 53\npermit tcp any host 10.3.0.10 eq 443\npermit icmp any any\ndeny ip any any' },
-  { id: 4, name: 'ACL-CONTRACTOR-LIMITED', description: 'Limited contractor access', content: 'permit tcp any any eq 80\npermit tcp any any eq 443\npermit udp any any eq 53\npermit icmp any any\ndeny ip any any' },
-  { id: 5, name: 'ACL-GUEST-INTERNET', description: 'Internet-only guest access', content: 'permit tcp any any eq 80\npermit tcp any any eq 443\npermit udp any any eq 53\npermit udp any any eq 67\npermit udp any any eq 68\ndeny ip any 10.0.0.0 0.255.255.255\ndeny ip any 172.16.0.0 0.15.255.255\ndeny ip any 192.168.0.0 0.0.255.255\npermit ip any any' },
-  { id: 6, name: 'ACL-POSTURE-REMEDIATE', description: 'Posture remediation redirect', content: 'permit udp any any eq 53\npermit tcp any host 10.1.1.12 eq 8443\ndeny ip any any' },
-  { id: 7, name: 'ACL-BLACKHOLE', description: 'Deny all traffic', content: 'deny ip any any' },
+  { id: 1, name: 'PERMIT_ALL_IPV4_TRAFFIC', description: 'Permits all IPv4 traffic (system default)', content: 'permit ip any any', ipVersion: 'IPv4', isDefault: true },
+  { id: 2, name: 'DENY_ALL_IPV4_TRAFFIC', description: 'Denies all IPv4 traffic (system default)', content: 'deny ip any any', ipVersion: 'IPv4', isDefault: true },
+  { id: 3, name: 'PERMIT_ALL_IPV6_TRAFFIC', description: 'Permits all IPv6 traffic (system default)', content: 'permit ipv6 any any', ipVersion: 'IPv6', isDefault: true },
+  { id: 4, name: 'DENY_ALL_IPV6_TRAFFIC', description: 'Denies all IPv6 traffic (system default)', content: 'deny ipv6 any any', ipVersion: 'IPv6', isDefault: true },
+  { id: 5, name: 'ACL-WEBAUTH-REDIRECT', description: 'Web auth redirect ACL for CWA', content: 'deny udp any any eq 53\npermit tcp any any eq 53\ndeny ip any any', ipVersion: 'IPv4', isDefault: false },
+  { id: 6, name: 'ACL-IOT-RESTRICT', description: 'Restricted access for IoT devices', content: 'permit udp any any eq 53\npermit tcp any host 10.3.0.10 eq 443\npermit icmp any any\ndeny ip any any', ipVersion: 'IPv4', isDefault: false },
+  { id: 7, name: 'ACL-CONTRACTOR-LIMITED', description: 'Limited contractor access', content: 'permit tcp any any eq 80\npermit tcp any any eq 443\npermit udp any any eq 53\npermit icmp any any\ndeny ip any any', ipVersion: 'IPv4', isDefault: false },
+  { id: 8, name: 'ACL-GUEST-INTERNET', description: 'Internet-only guest access', content: 'permit tcp any any eq 80\npermit tcp any any eq 443\npermit udp any any eq 53\npermit udp any any eq 67\npermit udp any any eq 68\ndeny ip any 10.0.0.0 0.255.255.255\ndeny ip any 172.16.0.0 0.15.255.255\ndeny ip any 192.168.0.0 0.0.255.255\npermit ip any any', ipVersion: 'IPv4', isDefault: false },
+  { id: 9, name: 'ACL-POSTURE-REMEDIATE', description: 'Posture remediation redirect', content: 'permit udp any any eq 53\npermit tcp any host 10.1.1.12 eq 8443\ndeny ip any any', ipVersion: 'IPv4', isDefault: false },
+  { id: 10, name: 'ACL-BLACKHOLE', description: 'Deny all traffic', content: 'deny ip any any', ipVersion: 'IPv4', isDefault: false },
 ];
 
 // ======================== ALLOWED PROTOCOLS ========================
@@ -159,16 +162,40 @@ export const commandSetDetails: Record<string, { rules: { grant: 'Permit' | 'Den
   'DenyConfig': { rules: [{ grant: 'Deny', command: 'configure', arguments: '.*' }, { grant: 'Deny', command: 'write', arguments: '.*' }, { grant: 'Deny', command: 'copy', arguments: '.*' }, { grant: 'Deny', command: 'reload', arguments: '.*' }, { grant: 'Permit', command: '.*', arguments: '.*' }] },
 };
 
-// ======================== MESSAGE CODES ========================
+// ======================== ISE MESSAGE CATALOG (Official Codes) ========================
 export const messageCodes = [
   { code: 5200, category: 'Passed-Authentication', severity: 'INFO', description: 'Authentication succeeded' },
   { code: 5400, category: 'Failed-Attempt', severity: 'ERROR', description: 'Authentication failed' },
-  { code: 5405, category: 'Failed-Attempt', severity: 'ERROR', description: 'RADIUS request dropped' },
-  { code: 5440, category: 'Failed-Attempt', severity: 'WARN', description: 'Endpoint abandoned EAP session' },
-  { code: 12304, category: 'RADIUS-Diagnostics', severity: 'INFO', description: 'Extracted EAP-Response containing EAP-TLS response' },
-  { code: 22028, category: 'Failed-Attempt', severity: 'ERROR', description: 'Authentication failed — wrong password' },
+  { code: 5405, category: 'Failed-Attempt', severity: 'ERROR', description: 'RADIUS Request dropped' },
+  { code: 5412, category: 'Failed-Attempt', severity: 'ERROR', description: 'RADIUS packet contains invalid state attribute' },
+  { code: 5434, category: 'Failed-Attempt', severity: 'WARN', description: 'Endpoint conducted several failed authentications of the same scenario' },
+  { code: 5440, category: 'Failed-Attempt', severity: 'WARN', description: 'Endpoint abandoned EAP session and started new' },
+  { code: 11001, category: 'RADIUS-Diagnostics', severity: 'INFO', description: 'Received RADIUS Access-Request' },
+  { code: 11003, category: 'RADIUS-Diagnostics', severity: 'INFO', description: 'Returned RADIUS Access-Accept' },
+  { code: 11004, category: 'RADIUS-Diagnostics', severity: 'INFO', description: 'Returned RADIUS Access-Reject' },
+  { code: 12000, category: 'EAP-Diagnostics', severity: 'INFO', description: 'EAP method started' },
+  { code: 12002, category: 'EAP-Diagnostics', severity: 'INFO', description: 'EAP method completed successfully' },
+  { code: 12013, category: 'EAP-Diagnostics', severity: 'INFO', description: 'EAP-TLS handshake started' },
+  { code: 12014, category: 'EAP-Diagnostics', severity: 'ERROR', description: 'EAP-TLS handshake failed' },
+  { code: 12015, category: 'EAP-Diagnostics', severity: 'INFO', description: 'EAP method negotiation completed' },
+  { code: 12300, category: 'Machine-Auth', severity: 'INFO', description: 'Machine authentication started' },
+  { code: 12304, category: 'EAP-Diagnostics', severity: 'INFO', description: 'Extracted EAP-Response containing EAP-TLS response' },
+  { code: 12305, category: 'Endpoint', severity: 'INFO', description: 'Endpoint found in database' },
+  { code: 12306, category: 'Endpoint', severity: 'WARN', description: 'Endpoint not found — will be profiled' },
+  { code: 12514, category: 'Failed-Attempt', severity: 'ERROR', description: 'EAP-TLS handshake failed' },
+  { code: 15004, category: 'Policy-Eval', severity: 'INFO', description: 'Policy set condition not matched' },
+  { code: 15006, category: 'Policy-Eval', severity: 'INFO', description: 'Evaluating policy sets' },
+  { code: 15008, category: 'Policy-Eval', severity: 'INFO', description: 'Policy set matched' },
+  { code: 15036, category: 'Policy-Eval', severity: 'INFO', description: 'Evaluating authorization policies' },
+  { code: 15039, category: 'Policy-Eval', severity: 'WARN', description: 'No authorization rule matched — using default' },
+  { code: 15042, category: 'Policy-Eval', severity: 'INFO', description: 'Authorization rule matched' },
+  { code: 15044, category: 'Policy-Eval', severity: 'INFO', description: 'Authorization profile applied' },
+  { code: 15048, category: 'Policy-Eval', severity: 'WARN', description: 'No policy set matched — using default' },
+  { code: 22016, category: 'Identity', severity: 'ERROR', description: 'User account is disabled' },
+  { code: 22028, category: 'Failed-Attempt', severity: 'ERROR', description: 'Authentication failed and target identity store is unavailable' },
+  { code: 22037, category: 'Identity', severity: 'INFO', description: 'Identity resolution detected single matching account' },
+  { code: 22040, category: 'Failed-Attempt', severity: 'ERROR', description: 'Wrong password or invalid shared secret' },
   { code: 22056, category: 'Failed-Attempt', severity: 'ERROR', description: 'Subject not found in the applicable identity store(s)' },
-  { code: 24408, category: 'Failed-Attempt', severity: 'ERROR', description: 'User not found in identity store' },
   { code: 24421, category: 'Passed-Authentication', severity: 'INFO', description: 'Identity resolution detected single matching account' },
   { code: 86009, category: 'System-Diagnostics', severity: 'INFO', description: 'Guest user record created' },
   { code: 86010, category: 'System-Diagnostics', severity: 'INFO', description: 'Guest user changed password' },
@@ -192,9 +219,9 @@ export const ntpServers = [
   { ip: '10.1.1.2', status: 'Reachable', stratum: 3, offset: '+0.012s' },
 ];
 export const patchHistory = [
-  { id: 1, name: 'ise-patchbundle-3.1.0.518-Patch7-23071409.SPA.x86_64.tar.gz', version: 'Patch 7', installedDate: '2026-03-01', installedBy: 'admin', status: 'Applied' },
-  { id: 2, name: 'ise-patchbundle-3.1.0.518-Patch6-23050111.SPA.x86_64.tar.gz', version: 'Patch 6', installedDate: '2025-12-15', installedBy: 'admin', status: 'Applied (Superseded)' },
-  { id: 3, name: 'ise-patchbundle-3.1.0.518-Patch5-23030815.SPA.x86_64.tar.gz', version: 'Patch 5', installedDate: '2025-09-20', installedBy: 'admin', status: 'Applied (Superseded)' },
+  { id: 1, name: 'ise-patchbundle-3.3.0.430-Patch3-26020109.SPA.x86_64.tar.gz', version: 'Patch 3', installedDate: '2026-03-01', installedBy: 'admin', status: 'Applied' },
+  { id: 2, name: 'ise-patchbundle-3.3.0.430-Patch2-26010511.SPA.x86_64.tar.gz', version: 'Patch 2', installedDate: '2025-12-15', installedBy: 'admin', status: 'Applied (Superseded)' },
+  { id: 3, name: 'ise-patchbundle-3.3.0.430-Patch1-25100815.SPA.x86_64.tar.gz', version: 'Patch 1', installedDate: '2025-09-20', installedBy: 'admin', status: 'Applied (Superseded)' },
 ];
 
 export const ersApiSettings = { enabled: true, port: 9060, corsAllowed: true, maxSessions: 100, documentation: 'https://ise-pan01.corp.local:9060/ers/sdk', status: 'Running' };
