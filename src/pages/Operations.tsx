@@ -10,6 +10,13 @@ import LogDetailDialog from "@/components/LogDetailDialog";
 
 type Tab = 'live-logs' | 'live-sessions' | 'tacacs-logs' | 'troubleshoot' | 'reports' | 'anc' | 'system360' | 'message-codes';
 
+// Operations page structure mirrors real ISE 3.3:
+// RADIUS > Live Logs, RADIUS > Live Sessions
+// TACACS > Live Logs
+// Reports
+// Troubleshoot > Diagnostic Tools > General Tools
+// System 360, ANC, Message Codes
+
 const Operations = () => {
   const sim = useSimulation();
   const [tab, setTab] = useState<Tab>('live-logs');
