@@ -1,8 +1,8 @@
 import { useState } from "react";
 import ISELeftNav, { NavSection } from "@/components/ISELeftNav";
 import NodeDetailDialog from "@/components/NodeDetailDialog";
-import { deploymentNodes, licenses, systemCertificates, trustedCertificates, adminUsers } from "@/lib/mockData";
-import { Server, CheckCircle, XCircle, Key, Shield, Users, Settings, ToggleLeft } from "lucide-react";
+import { deploymentNodes, licenses, systemCertificates, trustedCertificates, adminUsers, networkDevices, networkDeviceGroups, internalUsers, identityGroupsList, externalIdentitySources } from "@/lib/mockData";
+import { Server, CheckCircle, XCircle, Key, Shield, Users, Settings, ToggleLeft, Router, Layers, UserCheck, Database, Globe } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,21 @@ const sections: NavSection[] = [
     { label: 'Certificates', key: 'certificates' },
     { label: 'Settings', key: 'settings' },
   ], defaultOpen: true },
+  { label: 'Network Resources', items: [
+    { label: 'Network Devices', key: 'network-devices' },
+    { label: 'Network Device Groups', key: 'ndg' },
+    { label: 'External RADIUS Servers', key: 'ext-radius' },
+  ], defaultOpen: false },
+  { label: 'Identity Management', items: [
+    { label: 'Internal Users', key: 'internal-users' },
+    { label: 'Identity Groups', key: 'identity-groups' },
+    { label: 'External Identity Sources', key: 'ext-identity' },
+    { label: 'Identity Source Sequences', key: 'id-sequences' },
+  ], defaultOpen: false },
   { label: 'Admin Access', items: [
     { label: 'Admin Users', key: 'admin-users' },
-  ], defaultOpen: true },
+    { label: 'Admin Groups', key: 'admin-groups' },
+  ], defaultOpen: false },
 ];
 
 type CertTab = 'system' | 'trusted' | 'ca' | 'csr';
@@ -28,55 +40,44 @@ const Administration = () => {
   const [panFailover, setPanFailover] = useState(false);
   const [certTab, setCertTab] = useState<CertTab>('system');
   const [addAdminOpen, setAddAdminOpen] = useState(false);
+  const [addDeviceOpen, setAddDeviceOpen] = useState(false);
+  const [addUserOpen, setAddUserOpen] = useState(false);
+
+  const getSectionLabel = () => {
+    const section = sections.find(s => s.items.some(i => i.key === active));
+    const item = sections.flatMap(s => s.items).find(i => i.key === active);
+    return { section: section?.label, item: item?.label };
+  };
+  const { section: secLabel, item: itemLabel } = getSectionLabel();
 
   return (
     <div className="flex">
       <ISELeftNav sections={sections} activeKey={active} onSelect={setActive} />
       <div className="flex-1 p-4 space-y-3 overflow-auto">
-        <div className="text-xs" style={{ color: '#666' }}>Administration &gt; {sections.find(s => s.items.some(i => i.key === active))?.label} &gt; <span className="font-semibold" style={{ color: '#333' }}>{sections.flatMap(s => s.items).find(i => i.key === active)?.label}</span></div>
+        <div className="text-xs" style={{ color: '#666' }}>Administration &gt; {secLabel} &gt; <span className="font-semibold" style={{ color: '#333' }}>{itemLabel}</span></div>
 
         {active === 'deployment' && (
           <>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2"><Server size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Deployment Nodes</span></div>
               <div className="flex items-center gap-2 text-xs">
-                <ToggleLeft size={14} style={{ color: '#888' }} />
-                <span style={{ color: '#555' }}>PAN Failover</span>
+                <ToggleLeft size={14} style={{ color: '#888' }} /><span style={{ color: '#555' }}>PAN Failover</span>
                 <Switch checked={panFailover} onCheckedChange={setPanFailover} />
-                <span className="px-2 py-0.5 rounded text-[10px] font-medium" style={{ background: panFailover ? '#6cc04a20' : '#f0f0f0', color: panFailover ? '#3d7a2a' : '#888' }}>
-                  {panFailover ? 'Enabled' : 'Disabled'}
-                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-medium" style={{ background: panFailover ? '#6cc04a20' : '#f0f0f0', color: panFailover ? '#3d7a2a' : '#888' }}>{panFailover ? 'Enabled' : 'Disabled'}</span>
               </div>
             </div>
-
-            <div className="border border-border rounded overflow-auto bg-card">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr style={{ background: '#f0f0f0' }}>
-                    {['Hostname', 'Role', 'Personas', 'IP Address', 'Version', 'Status'].map(h => (
-                      <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {deploymentNodes.map((n, i) => (
-                    <tr key={n.hostname} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className="hover:bg-accent/60 cursor-pointer" onClick={() => { setSelectedNode(n); setNodeDialogOpen(true); }}>
-                      <td className="p-2 font-mono" style={{ color: '#049fd9' }}>{n.hostname}</td>
-                      <td className="p-2 font-semibold">{n.role}</td>
-                      <td className="p-2" style={{ color: '#666' }}>{n.persona}</td>
-                      <td className="p-2 font-mono">{n.ip}</td>
-                      <td className="p-2 font-mono" style={{ color: '#888' }}>{n.version}</td>
-                      <td className="p-2">
-                        {n.status === 'Connected'
-                          ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Connected</span>
-                          : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#cc0000' }} /> Disconnected</span>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a node to configure roles and profiling probes</div>
+            <ISETable headers={['Hostname', 'Role', 'Personas', 'IP Address', 'Version', 'Status']}
+              rows={deploymentNodes.map(n => [
+                <span className="font-mono" style={{ color: '#049fd9' }}>{n.hostname}</span>,
+                <span className="font-semibold">{n.role}</span>,
+                <span style={{ color: '#666' }}>{n.persona}</span>,
+                <span className="font-mono">{n.ip}</span>,
+                <span className="font-mono" style={{ color: '#888' }}>{n.version}</span>,
+                n.status === 'Connected' ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Connected</span> : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#cc0000' }} /> Disconnected</span>,
+              ])}
+              onRowClick={(i) => { setSelectedNode(deploymentNodes[i]); setNodeDialogOpen(true); }}
+            />
             <div className="mt-4 p-3 border border-border rounded bg-card">
               <div className="text-xs font-semibold mb-2" style={{ color: '#333' }}>System Information</div>
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -87,7 +88,6 @@ const Administration = () => {
                 <div><span style={{ color: '#888' }}>PAN Failover:</span> <span className="font-mono">{panFailover ? 'Active' : 'Standby'}</span></div>
               </div>
             </div>
-
             <NodeDetailDialog node={selectedNode} open={nodeDialogOpen} onOpenChange={setNodeDialogOpen} />
           </>
         )}
@@ -95,37 +95,18 @@ const Administration = () => {
         {active === 'licensing' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Key size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>License Usage</span></div>
-            <div className="border border-border rounded overflow-auto bg-card">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr style={{ background: '#f0f0f0' }}>
-                    {['License Type', 'Description', 'Total', 'Consumed', 'Available', 'Status', 'Expiry'].map(h => (
-                      <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {licenses.map((l, i) => (
-                    <tr key={l.id} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className="hover:bg-accent/60">
-                      <td className="p-2 font-semibold" style={{ color: '#049fd9' }}>{l.type}</td>
-                      <td className="p-2" style={{ color: '#666' }}>{l.description}</td>
-                      <td className="p-2 font-mono">{l.total.toLocaleString()}</td>
-                      <td className="p-2 font-mono font-bold">{l.consumed.toLocaleString()}</td>
-                      <td className="p-2 font-mono">{(l.total - l.consumed).toLocaleString()}</td>
-                      <td className="p-2">
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{
-                          background: l.status === 'Compliant' ? '#6cc04a20' : '#fbab1830',
-                          color: l.status === 'Compliant' ? '#3d7a2a' : '#b47a00',
-                        }}>{l.status}</span>
-                      </td>
-                      <td className="p-2 font-mono" style={{ color: '#888' }}>{l.expiry}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="grid grid-cols-4 gap-3 mt-3">
-              {licenses.slice(0, 4).map(l => (
+            <ISETable headers={['License Type', 'Description', 'Total', 'Consumed', 'Available', 'Status', 'Expiry']}
+              rows={licenses.map(l => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{l.type}</span>,
+                <span style={{ color: '#666' }}>{l.description}</span>,
+                <span className="font-mono">{l.total.toLocaleString()}</span>,
+                <span className="font-mono font-bold">{l.consumed.toLocaleString()}</span>,
+                <span className="font-mono">{(l.total - l.consumed).toLocaleString()}</span>,
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: l.status === 'Compliant' ? '#6cc04a20' : '#fbab1830', color: l.status === 'Compliant' ? '#3d7a2a' : '#b47a00' }}>{l.status}</span>,
+                <span className="font-mono" style={{ color: '#888' }}>{l.expiry}</span>,
+              ])} />
+            <div className="grid grid-cols-5 gap-3 mt-3">
+              {licenses.map(l => (
                 <div key={l.id} className="border border-border rounded p-3 bg-card">
                   <div className="text-[11px] font-medium" style={{ color: '#666' }}>{l.type}</div>
                   <div className="text-lg font-bold mt-1" style={{ color: '#049fd9' }}>{Math.round(l.consumed / l.total * 100)}%</div>
@@ -147,48 +128,51 @@ const Administration = () => {
                 <button key={key} className="px-4 py-2 text-xs font-medium border-b-2 transition-colors" style={{ color: certTab === key ? '#049fd9' : '#666', borderBottomColor: certTab === key ? '#049fd9' : 'transparent' }} onClick={() => setCertTab(key)}>{label}</button>
               ))}
             </div>
-
             {certTab === 'system' && (
-              <div className="border border-border rounded overflow-auto bg-card">
-                <table className="w-full text-xs">
-                  <thead><tr style={{ background: '#f0f0f0' }}>{['Friendly Name', 'Issued To', 'Issued By', 'Valid From', 'Valid To', 'Used By', 'Status'].map(h => <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>)}</tr></thead>
-                  <tbody>{systemCertificates.map((c, i) => (
-                    <tr key={c.id} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className="hover:bg-accent/60">
-                      <td className="p-2 font-semibold" style={{ color: '#049fd9' }}>{c.friendlyName}</td>
-                      <td className="p-2 font-mono text-[11px]">{c.issuedTo}</td>
-                      <td className="p-2" style={{ color: '#666' }}>{c.issuedBy}</td>
-                      <td className="p-2 font-mono" style={{ color: '#888' }}>{c.validFrom}</td>
-                      <td className="p-2 font-mono" style={{ color: '#888' }}>{c.validTo}</td>
-                      <td className="p-2">{c.usedBy}</td>
-                      <td className="p-2"><span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: c.status === 'Valid' ? '#6cc04a20' : '#fbab1830', color: c.status === 'Valid' ? '#3d7a2a' : '#b47a00' }}>{c.status}</span></td>
-                    </tr>
-                  ))}</tbody>
-                </table>
-              </div>
+              <ISETable headers={['Friendly Name', 'Issued To', 'Issued By', 'Valid From', 'Valid To', 'Used By', 'Status']}
+                rows={systemCertificates.map(c => [
+                  <span className="font-semibold" style={{ color: '#049fd9' }}>{c.friendlyName}</span>,
+                  <span className="font-mono text-[11px]">{c.issuedTo}</span>,
+                  <span style={{ color: '#666' }}>{c.issuedBy}</span>,
+                  <span className="font-mono" style={{ color: '#888' }}>{c.validFrom}</span>,
+                  <span className="font-mono" style={{ color: '#888' }}>{c.validTo}</span>,
+                  c.usedBy,
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: c.status === 'Valid' ? '#6cc04a20' : '#fbab1830', color: c.status === 'Valid' ? '#3d7a2a' : '#b47a00' }}>{c.status}</span>,
+                ])} />
             )}
             {certTab === 'trusted' && (
-              <div className="border border-border rounded overflow-auto bg-card">
-                <table className="w-full text-xs">
-                  <thead><tr style={{ background: '#f0f0f0' }}>{['Friendly Name', 'Subject', 'Issued By', 'Expiry', 'Status', 'Trusted For'].map(h => <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>)}</tr></thead>
-                  <tbody>{trustedCertificates.map((c, i) => (
-                    <tr key={c.id} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className="hover:bg-accent/60">
-                      <td className="p-2 font-semibold" style={{ color: '#049fd9' }}>{c.friendlyName}</td>
-                      <td className="p-2 font-mono text-[11px]">{c.subject}</td>
-                      <td className="p-2">{c.issuedBy}</td>
-                      <td className="p-2 font-mono" style={{ color: '#888' }}>{c.validTo}</td>
-                      <td className="p-2"><span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#6cc04a20', color: '#3d7a2a' }}>{c.status}</span></td>
-                      <td className="p-2" style={{ color: '#666' }}>{c.trustedFor}</td>
-                    </tr>
-                  ))}</tbody>
-                </table>
-              </div>
+              <ISETable headers={['Friendly Name', 'Subject', 'Issued By', 'Expiry', 'Status', 'Trusted For']}
+                rows={trustedCertificates.map(c => [
+                  <span className="font-semibold" style={{ color: '#049fd9' }}>{c.friendlyName}</span>,
+                  <span className="font-mono text-[11px]">{c.subject}</span>,
+                  c.issuedBy,
+                  <span className="font-mono" style={{ color: '#888' }}>{c.validTo}</span>,
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#6cc04a20', color: '#3d7a2a' }}>{c.status}</span>,
+                  <span style={{ color: '#666' }}>{c.trustedFor}</span>,
+                ])} />
             )}
             {certTab === 'ca' && (
-              <div className="p-6 text-center border border-border rounded bg-card">
-                <Shield size={32} style={{ color: '#ccc' }} className="mx-auto mb-2" />
-                <div className="text-xs" style={{ color: '#888' }}>ISE Internal Certificate Authority</div>
-                <div className="text-xs mt-1" style={{ color: '#666' }}>CA Enabled — Root CA certificate valid until 2033-01-01</div>
-                <div className="mt-3 text-xs font-mono p-2 rounded" style={{ background: '#f5f5f5', color: '#333' }}>CN=Cisco ISE CA, O=Cisco, L=San Jose, ST=California, C=US</div>
+              <div className="space-y-3">
+                <div className="p-4 border border-border rounded bg-card">
+                  <div className="flex items-center gap-2 mb-3"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-xs font-semibold" style={{ color: '#333' }}>ISE Internal Certificate Authority</span></div>
+                  <div className="text-xs" style={{ color: '#666' }}>CA Enabled — Root CA certificate valid until 2033-01-01</div>
+                  <div className="mt-2 text-xs font-mono p-2 rounded" style={{ background: '#f5f5f5', color: '#333' }}>CN=Cisco ISE CA, O=Cisco, L=San Jose, ST=California, C=US</div>
+                </div>
+                <div className="p-4 border border-border rounded bg-card">
+                  <div className="text-xs font-semibold mb-2" style={{ color: '#333' }}>CA Certificate Templates</div>
+                  <ISETable headers={['Template Name', 'Key Type', 'Key Size', 'SAN', 'Usage']}
+                    rows={[
+                      ['ISE_Internal_CA_Template', 'RSA', '2048', 'DNS, IP', 'Client Auth, Server Auth'],
+                      ['EAP_Authentication_Template', 'RSA', '2048', 'DNS', 'Client Auth'],
+                      ['Portal_Certificate_Template', 'RSA', '4096', 'DNS', 'Server Auth'],
+                    ].map(r => r.map((c, i) => i === 0 ? <span className="font-semibold" style={{ color: '#049fd9' }}>{c}</span> : <span className="font-mono">{c}</span>))} />
+                  <button className="mt-2 text-xs px-3 py-1 rounded text-white" style={{ background: '#049fd9' }}>+ Add Template</button>
+                </div>
+                <div className="p-4 border border-border rounded bg-card">
+                  <div className="text-xs font-semibold mb-2" style={{ color: '#333' }}>External CA (SCEP)</div>
+                  <div className="text-xs" style={{ color: '#888' }}>No external SCEP servers configured</div>
+                  <button className="mt-2 text-xs px-3 py-1 rounded text-white" style={{ background: '#049fd9' }}>+ Add External CA</button>
+                </div>
               </div>
             )}
             {certTab === 'csr' && (
@@ -212,13 +196,162 @@ const Administration = () => {
                 { label: 'DNS Server', value: '10.1.1.5, 10.1.1.6' },
                 { label: 'SMTP Server', value: 'smtp.corp.local' },
                 { label: 'Alarm Notification Email', value: 'ise-alerts@corp.local' },
+                { label: 'Profiler CoA Type', value: 'Reauth' },
+                { label: 'Endpoint Attribute Filter', value: 'Enabled' },
+                { label: 'pxGrid', value: 'Enabled on ise-pan01.corp.local' },
               ].map(s => (
                 <div key={s.label} className="flex items-center">
-                  <span className="w-48 font-medium" style={{ color: '#555' }}>{s.label}</span>
+                  <span className="w-52 font-medium" style={{ color: '#555' }}>{s.label}</span>
                   <span className="font-mono" style={{ color: '#333' }}>{s.value}</span>
                 </div>
               ))}
             </div>
+          </>
+        )}
+
+        {/* Network Devices */}
+        {active === 'network-devices' && (
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2"><Router size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Devices</span></div>
+              <button className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddDeviceOpen(true)}>+ Add Device</button>
+            </div>
+            <ISETable headers={['Name', 'IP Address', 'Device Type', 'Location', 'Profile', 'TACACS+', 'Status']}
+              rows={networkDevices.map(d => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{d.name}</span>,
+                <span className="font-mono">{d.ip}</span>,
+                <span style={{ color: '#666' }}>{d.type}</span>,
+                d.location,
+                d.profile,
+                d.tacacs ? <CheckCircle size={12} style={{ color: '#6cc04a' }} /> : <XCircle size={12} style={{ color: '#ccc' }} />,
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#6cc04a20', color: '#3d7a2a' }}>{d.status}</span>,
+              ])} />
+            <Dialog open={addDeviceOpen} onOpenChange={setAddDeviceOpen}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle className="text-sm">Add Network Device</DialogTitle></DialogHeader>
+                <div className="space-y-3 text-xs">
+                  {[['Device Name', 'text'], ['IP Address', 'text'], ['RADIUS Shared Secret', 'password']].map(([label, type]) => (
+                    <div key={label}><label className="block mb-1 font-medium" style={{ color: '#555' }}>{label}</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type={type} /></div>
+                  ))}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Type</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Switch</option><option>Wireless Controller</option><option>Firewall</option><option>VPN</option><option>Router</option></select></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Location</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Building A</option><option>Building B</option><option>Data Center</option><option>DMZ</option></select></div>
+                  </div>
+                  <div className="flex items-center gap-2"><input type="checkbox" /><span style={{ color: '#555' }}>Enable TACACS+ Authentication</span></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>SNMP RO Community</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" defaultValue="public" /></div>
+                </div>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDeviceOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => setAddDeviceOpen(false)}>Save</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
+
+        {active === 'ndg' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Layers size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Device Groups</span></div>
+            <div className="space-y-3">
+              {networkDeviceGroups.map(g => (
+                <div key={g.id} className="border border-border rounded bg-card p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-semibold" style={{ color: '#333' }}>{g.name}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: '#049fd920', color: '#049fd9' }}>{g.type}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {g.children.map(c => (
+                      <span key={c} className="px-2 py-1 border border-border rounded text-xs" style={{ color: '#555' }}>{g.name}#{c}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {active === 'ext-radius' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Globe size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>External RADIUS Servers</span></div>
+            <ISETable headers={['Name', 'Host IP', 'Auth Port', 'Acct Port', 'Shared Secret', 'Timeout', 'Status']}
+              rows={[
+                ['RADIUS-Proxy-01', '10.5.1.10', '1812', '1813', '●●●●●●●●', '5s', 'Active'],
+                ['RADIUS-Proxy-02', '10.5.1.11', '1812', '1813', '●●●●●●●●', '5s', 'Active'],
+              ].map(r => r.map((c, i) => i === 0 ? <span className="font-semibold" style={{ color: '#049fd9' }}>{c}</span> : <span className="font-mono">{c}</span>))} />
+          </>
+        )}
+
+        {/* Identity Management */}
+        {active === 'internal-users' && (
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2"><UserCheck size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Internal Users</span></div>
+              <button className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddUserOpen(true)}>+ Add User</button>
+            </div>
+            <ISETable headers={['Username', 'First Name', 'Last Name', 'Email', 'Identity Group', 'Status', 'Last Password Change']}
+              rows={internalUsers.map(u => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{u.name}</span>,
+                u.firstName, u.lastName,
+                <span className="font-mono text-[11px]">{u.email}</span>,
+                u.identityGroup,
+                u.status === 'Enabled' ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Enabled</span> : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#cc0000' }} /> Disabled</span>,
+                <span className="font-mono" style={{ color: '#888' }}>{u.lastPasswordChange}</span>,
+              ])} />
+            <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader><DialogTitle className="text-sm">Add Internal User</DialogTitle></DialogHeader>
+                <div className="space-y-3 text-xs">
+                  {[['Username', 'text'], ['First Name', 'text'], ['Last Name', 'text'], ['Email', 'email'], ['Password', 'password']].map(([label, type]) => (
+                    <div key={label}><label className="block mb-1 font-medium" style={{ color: '#555' }}>{label}</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type={type} /></div>
+                  ))}
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Identity Group</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card">{identityGroupsList.map(g => <option key={g.id}>{g.name}</option>)}</select></div>
+                </div>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddUserOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => setAddUserOpen(false)}>Create</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
+
+        {active === 'identity-groups' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Database size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Identity Groups</span></div>
+            <ISETable headers={['Group Name', 'Description', 'Members']}
+              rows={identityGroupsList.map(g => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{g.name}</span>,
+                <span style={{ color: '#666' }}>{g.description}</span>,
+                <span className="font-mono font-bold">{g.members.toLocaleString()}</span>,
+              ])} />
+          </>
+        )}
+
+        {active === 'ext-identity' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Globe size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>External Identity Sources</span></div>
+            <ISETable headers={['Name', 'Type', 'Status', 'Join Point / Server', 'Domain', 'Users', 'Groups']}
+              rows={externalIdentitySources.map(s => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{s.name}</span>,
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#049fd920', color: '#049fd9' }}>{s.type}</span>,
+                s.status === 'Connected' || s.status === 'Active' ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> {s.status}</span> : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#cc0000' }} /> {s.status}</span>,
+                <span className="font-mono text-[11px]">{s.joinPoint}</span>,
+                <span className="font-mono text-[11px]">{s.domain}</span>,
+                <span className="font-mono">{s.users.toLocaleString()}</span>,
+                <span className="font-mono">{s.groups}</span>,
+              ])} />
+          </>
+        )}
+
+        {active === 'id-sequences' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Layers size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Identity Source Sequences</span></div>
+            <ISETable headers={['Sequence Name', 'Sources', 'Description']}
+              rows={[
+                ['Internal_Users_First', 'Internal Users → Active Directory', 'Try internal users, then fallback to AD'],
+                ['AD_Only', 'Active Directory', 'Active Directory only authentication'],
+                ['Guest_Portal_Sequence', 'Guest Portal → Internal Users', 'Guest portal with internal user fallback'],
+                ['Certificate_Auth_Profile', 'Certificate Store → Internal Users', 'Certificate-based with user validation'],
+                ['All_User_ID_Stores', 'Internal Users → AD → LDAP', 'Try all identity stores in sequence'],
+              ].map(r => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{r[0]}</span>,
+                <span className="font-mono text-[11px]" style={{ color: '#666' }}>{r[1]}</span>,
+                <span style={{ color: '#666' }}>{r[2]}</span>,
+              ])} />
           </>
         )}
 
@@ -228,53 +361,65 @@ const Administration = () => {
               <div className="flex items-center gap-2"><Users size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Administrator Users</span></div>
               <button className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddAdminOpen(true)}>+ Add Admin</button>
             </div>
-            <div className="border border-border rounded overflow-auto bg-card">
-              <table className="w-full text-xs">
-                <thead><tr style={{ background: '#f0f0f0' }}>{['Username', 'Email', 'Admin Group', 'Status', 'Last Login'].map(h => <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>)}</tr></thead>
-                <tbody>{adminUsers.map((u, i) => (
-                  <tr key={u.id} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className="hover:bg-accent/60">
-                    <td className="p-2 font-semibold" style={{ color: '#049fd9' }}>{u.name}</td>
-                    <td className="p-2 font-mono text-[11px]">{u.email}</td>
-                    <td className="p-2">{u.groups}</td>
-                    <td className="p-2">
-                      {u.status === 'Enabled'
-                        ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Enabled</span>
-                        : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#cc0000' }} /> Disabled</span>}
-                    </td>
-                    <td className="p-2 font-mono" style={{ color: '#888' }}>{u.lastLogin}</td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-
+            <ISETable headers={['Username', 'Email', 'Admin Group', 'Status', 'Last Login']}
+              rows={adminUsers.map(u => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{u.name}</span>,
+                <span className="font-mono text-[11px]">{u.email}</span>,
+                u.groups,
+                u.status === 'Enabled' ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Enabled</span> : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#cc0000' }} /> Disabled</span>,
+                <span className="font-mono" style={{ color: '#888' }}>{u.lastLogin}</span>,
+              ])} />
             <Dialog open={addAdminOpen} onOpenChange={setAddAdminOpen}>
               <DialogContent className="max-w-md">
                 <DialogHeader><DialogTitle className="text-sm">Add Administrator User</DialogTitle></DialogHeader>
                 <div className="space-y-3 text-xs">
                   {[['Username', 'text'], ['Email', 'email'], ['Password', 'password']].map(([label, type]) => (
-                    <div key={label}>
-                      <label className="block mb-1 font-medium" style={{ color: '#555' }}>{label}</label>
-                      <input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type={type} />
-                    </div>
+                    <div key={label}><label className="block mb-1 font-medium" style={{ color: '#555' }}>{label}</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type={type} /></div>
                   ))}
-                  <div>
-                    <label className="block mb-1 font-medium" style={{ color: '#555' }}>Admin Group</label>
-                    <select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card">
-                      <option>Super Admin</option><option>Network Device Admin</option><option>Help Desk Admin</option><option>Read Only Admin</option><option>System Admin</option>
-                    </select>
-                  </div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Admin Group</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Super Admin</option><option>Network Device Admin</option><option>Help Desk Admin</option><option>Read Only Admin</option><option>System Admin</option></select></div>
                 </div>
-                <DialogFooter className="gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setAddAdminOpen(false)}>Cancel</Button>
-                  <Button size="sm" style={{ background: '#049fd9' }} onClick={() => setAddAdminOpen(false)}>Create</Button>
-                </DialogFooter>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddAdminOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => setAddAdminOpen(false)}>Create</Button></DialogFooter>
               </DialogContent>
             </Dialog>
+          </>
+        )}
+
+        {active === 'admin-groups' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Users size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Admin Groups</span></div>
+            <ISETable headers={['Group Name', 'Description', 'Type', 'Members']}
+              rows={[
+                ['Super Admin', 'Full access to all ISE functions', 'Internal', '1'],
+                ['Network Device Admin', 'Manage network devices and groups', 'Internal', '1'],
+                ['Help Desk Admin', 'View logs, manage endpoints', 'Internal', '1'],
+                ['Read Only Admin', 'Read-only access to all sections', 'Internal', '1'],
+                ['System Admin', 'System and maintenance operations', 'Internal', '1'],
+                ['Policy Admin', 'Manage policies and conditions', 'Internal', '0'],
+                ['MnT Admin', 'Monitoring and troubleshooting', 'Internal', '0'],
+              ].map(r => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{r[0]}</span>,
+                <span style={{ color: '#666' }}>{r[1]}</span>,
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#049fd920', color: '#049fd9' }}>{r[2]}</span>,
+                <span className="font-mono">{r[3]}</span>,
+              ])} />
           </>
         )}
       </div>
     </div>
   );
 };
+
+const ISETable = ({ headers, rows, onRowClick }: { headers: string[]; rows: React.ReactNode[][]; onRowClick?: (i: number) => void }) => (
+  <div className="border border-border rounded overflow-auto bg-card">
+    <table className="w-full text-xs">
+      <thead><tr style={{ background: '#f0f0f0' }}>{headers.map(h => <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>)}</tr></thead>
+      <tbody>{rows.map((row, i) => (
+        <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className={`hover:bg-accent/60 ${onRowClick ? 'cursor-pointer' : ''}`} onClick={() => onRowClick?.(i)}>
+          {row.map((cell, j) => <td key={j} className="p-2">{cell}</td>)}
+        </tr>
+      ))}</tbody>
+    </table>
+  </div>
+);
 
 export default Administration;
