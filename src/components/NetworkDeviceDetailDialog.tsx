@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { networkDeviceDetails } from "@/lib/mockDataExtended";
+import { toast } from "sonner";
 
 interface NetworkDeviceDetailDialogProps {
   device: { id: number; name: string; ip: string; type: string; location: string; profile: string; status: string; radiusSharedSecret: string; tacacs: boolean; snmpRO: string } | null;
@@ -24,6 +25,16 @@ const NetworkDeviceDetailDialog = ({ device, open, onOpenChange }: NetworkDevice
     { key: 'snmp', label: 'SNMP' },
     { key: 'trustsec', label: 'TrustSec' },
   ];
+
+  const handleSave = () => {
+    toast.success(`Network device "${device.name}" saved successfully`);
+    onOpenChange(false);
+  };
+
+  const handleDelete = () => {
+    toast.error(`Network device "${device.name}" deleted`);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -100,8 +111,9 @@ const NetworkDeviceDetailDialog = ({ device, open, onOpenChange }: NetworkDevice
         </div>
 
         <DialogFooter className="gap-2 mt-3">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" style={{ background: '#049fd9' }} onClick={() => onOpenChange(false)}>Save</Button>
+          <Button variant="outline" size="sm" style={{ color: '#cc0000', borderColor: '#cc0000' }} onClick={handleDelete}>Delete</Button>
+          <Button variant="outline" size="sm" onClick={() => { toast("Changes discarded"); onOpenChange(false); }}>Cancel</Button>
+          <Button size="sm" style={{ background: '#049fd9' }} onClick={handleSave}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

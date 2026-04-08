@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { internalUserDetails, adminUserDetails } from "@/lib/mockDataExtended";
 import { identityGroupsList } from "@/lib/mockData";
 import { CheckCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface UserDetailDialogProps {
   user: { id: number; name: string; firstName?: string; lastName?: string; email: string; identityGroup?: string; status: string } | null;
@@ -19,6 +20,16 @@ const UserDetailDialog = ({ user, type, open, onOpenChange }: UserDetailDialogPr
 
   const internalDetails = type === 'internal' ? internalUserDetails[user.name] : null;
   const adminDetails = type === 'admin' ? adminUserDetails[user.name] : null;
+
+  const handleSave = () => {
+    toast.success(`${type === 'internal' ? 'Internal' : 'Admin'} user "${user.name}" saved successfully`);
+    onOpenChange(false);
+  };
+
+  const handleDelete = () => {
+    toast.error(`${type === 'internal' ? 'Internal' : 'Admin'} user "${user.name}" deleted`);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -89,7 +100,7 @@ const UserDetailDialog = ({ user, type, open, onOpenChange }: UserDetailDialogPr
                     </table>
                   </div>
                 )}
-                <button className="mt-2 text-[10px] px-2 py-1 rounded text-white" style={{ background: '#049fd9' }}>+ Add Attribute</button>
+                <button className="mt-2 text-[10px] px-2 py-1 rounded text-white" style={{ background: '#049fd9' }} onClick={() => toast.info("Add attribute dialog would open here")}>+ Add Attribute</button>
               </div>
             )}
           </>
@@ -151,8 +162,9 @@ const UserDetailDialog = ({ user, type, open, onOpenChange }: UserDetailDialogPr
         )}
 
         <DialogFooter className="gap-2 mt-3">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" style={{ background: '#049fd9' }} onClick={() => onOpenChange(false)}>Save</Button>
+          <Button variant="outline" size="sm" style={{ color: '#cc0000', borderColor: '#cc0000' }} onClick={handleDelete}>Delete</Button>
+          <Button variant="outline" size="sm" onClick={() => { toast("Changes discarded"); onOpenChange(false); }}>Cancel</Button>
+          <Button size="sm" style={{ background: '#049fd9' }} onClick={handleSave}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

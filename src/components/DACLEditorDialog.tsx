@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface DACLEditorDialogProps {
   dacl: { name: string; description: string; content: string } | null;
@@ -9,6 +10,17 @@ interface DACLEditorDialogProps {
 
 const DACLEditorDialog = ({ dacl, open, onOpenChange }: DACLEditorDialogProps) => {
   if (!dacl) return null;
+
+  const handleSave = () => {
+    toast.success(`DACL "${dacl.name}" saved successfully`);
+    onOpenChange(false);
+  };
+
+  const handleDelete = () => {
+    toast.error(`DACL "${dacl.name}" deleted`);
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -25,8 +37,9 @@ const DACLEditorDialog = ({ dacl, open, onOpenChange }: DACLEditorDialogProps) =
           <div className="text-[10px] mt-1" style={{ color: '#888' }}>Each line is an Access Control Entry (ACE). Format: permit|deny [protocol] [source] [destination] [eq port]</div>
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" style={{ background: '#049fd9' }} onClick={() => onOpenChange(false)}>Save</Button>
+          <Button variant="outline" size="sm" style={{ color: '#cc0000', borderColor: '#cc0000' }} onClick={handleDelete}>Delete</Button>
+          <Button variant="outline" size="sm" onClick={() => { toast("Changes discarded"); onOpenChange(false); }}>Cancel</Button>
+          <Button size="sm" style={{ background: '#049fd9' }} onClick={handleSave}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

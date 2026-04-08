@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 interface AllowedProtocolsDialogProps {
   service: { name: string; description: string; protocols: Record<string, boolean> } | null;
@@ -10,6 +11,12 @@ interface AllowedProtocolsDialogProps {
 
 const AllowedProtocolsDialog = ({ service, open, onOpenChange }: AllowedProtocolsDialogProps) => {
   if (!service) return null;
+
+  const handleSave = () => {
+    toast.success(`Allowed protocols "${service.name}" saved successfully`);
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
@@ -32,8 +39,8 @@ const AllowedProtocolsDialog = ({ service, open, onOpenChange }: AllowedProtocol
           </div>
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" style={{ background: '#049fd9' }} onClick={() => onOpenChange(false)}>Save</Button>
+          <Button variant="outline" size="sm" onClick={() => { toast("Changes discarded"); onOpenChange(false); }}>Cancel</Button>
+          <Button size="sm" style={{ background: '#049fd9' }} onClick={handleSave}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
