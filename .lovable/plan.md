@@ -1,111 +1,156 @@
 
 
-# Modal-Level Accuracy Enhancement for Administration & Policy
+# Feature Gap Analysis: Cisco ISE 3.3 Simulator vs. Official Documentation
 
-## Overview
-Add detailed configuration modals and drill-down dialogs throughout the Administration and Policy sections to match the real Cisco ISE 3.x GUI at the modal/dialog level. Currently, most items are display-only tables. The real ISE allows clicking any row to open a full configuration form.
+Based on a thorough review of the **Cisco ISE 3.3 Administrator Guide** (14 chapters), here are the missing features grouped by severity.
 
-## What's Missing (Modal-Level)
+---
 
-### Policy Section
+## GAP SUMMARY
 
-**1. Policy Set Detail Modal** — Clicking a policy set row should open a full-page-style dialog showing:
-- Policy set name, description, status toggle
-- Embedded Authentication Policy table (rules with conditions, allowed protocols, identity store)
-- Embedded Authorization Policy table (rules with conditions, profile, security group)
-- "+" buttons to add rules, drag-handle icons for reordering
-- Conditions editor showing attribute/operator/value with AND/OR logic
+| Area | Existing Features | Missing Features | Gap % |
+|------|------------------|-----------------|-------|
+| Policy / Segmentation | Policy Sets, Auth/Authz, Conditions, Profiling, Client Provisioning | Downloadable ACLs, Allowed Protocols editor, RADIUS Vendor Dictionaries, Policy Exceptions, MAB config, Time/Date conditions | ~35% |
+| Administration / Basic Setup | Deployment, Licensing, Certs, Network Devices, Users, Settings | Backup/Restore, Repositories, Patch Management, Admin Groups detail, Network Device Profiles, RADIUS Server Sequences, Admin Access policies, SMTP/NTP/Proxy config, Data Connect, API Gateway | ~50% |
+| Operations / Maintain & Monitor | Live Logs, Live Sessions, Troubleshoot, Reports, ANC | TACACS Live Logs, Endpoint Debug Log Collector, Collection Filters, System 360 (Grafana/Kibana), Scheduled Reports, Export Summary, Message Codes/Catalogs, Syslog config | ~45% |
+| Compliance / Posture | Basic posture policies in Work Centers | Posture Conditions (File, Registry, Firewall, AV, Antispyware, Disk Encryption, USB, Patch Mgmt), Posture Requirements, Remediation Actions, AUP config, Agent Stealth Mode, Temporal Agent, Agentless Posture, Posture Reassessment | ~80% |
+| Threat Containment | None | TC-NAC service, Vulnerability Assessment (Qualys/Nexpose/Tenable adapters), Compromised Endpoints view, Threat dictionary attributes | 100% |
+| Segmentation / TrustSec | SGTs, Egress Matrix, IP-SGT mapping | SXP (SGT Exchange Protocol) devices/domains, TrustSec AAA Servers, SGACL management, NDAC Authorization, TrustSec Dashboard (metrics/alarms/quick view), TrustSec CoA flows, ACI integration, Meraki integration | ~60% |
+| pxGrid | Toggle in settings | pxGrid live sessions view, pxGrid clients list, pxGrid WebSocket subscribers, pxGrid topic subscriptions, certificate-based auth config | ~90% |
+| Guest & Secure WiFi | Portals, Sponsor Groups | Guest Types detail dialog, Sponsor Portal config, Hotspot Portal, Self-Registered Guest Portal flow, Guest password policy, Guest SMTP notifications, Portal customization (CSS/theme editor), Portal page sequence editor | ~50% |
+| BYOD | Overview, My Devices, Settings | BYOD Portal page flow editor, Native Supplicant Profile detail, Dual SSID/Single SSID workflow diagrams, Certificate Provisioning Portal, MDM integration panel | ~60% |
+| Device Administration | TACACS profiles, Command Sets, Policy Sets | TACACS+ Live Logs, TACACS+ external servers, Device Admin Conditions, Shell Profiles detail, Command Set detail dialog with permit/deny rules | ~50% |
 
-**2. Authorization Profile Detail Modal** — Clicking a profile opens a tabbed dialog:
-- **General tab**: Name, description, Access Type (ACCESS_ACCEPT/REJECT), DACL name, VLAN ID/Name, Voice Domain Permission, Web Redirection (type, ACL, portal), Reauthentication (timer, maintain connectivity), Advanced Attributes
-- **Common Tasks section**: DACL toggle, VLAN toggle, Voice VLAN, Web Redirection (CWA/NSP/MDM/Client Provisioning), Auto SmartPort, Access Type, Interface Template, ASA VPN, AVC Profile, Airespace ACL
-- Attributes Details panel showing RADIUS attribute-value pairs sent to NAD
+---
 
-**3. Condition Studio Modal** — Clicking a condition opens a visual condition builder:
-- Drag-and-drop condition blocks with AND/OR/NOT logic
-- Attribute browser (Dictionary, Attribute, Operator, Value dropdowns)
-- Save As Library Condition option
+## IMPLEMENTATION PLAN (Priority Order)
 
-**4. Profiling Policy Detail Modal** — Click a profiling policy:
-- Name, Min Certainty Factor, Parent Policy
-- Conditions list with certainty factor per condition
-- Associated CoA (Change of Authorization) type
-- Exception Action
+### Phase 1 — High-Impact Missing Sections (New Pages/Tabs)
 
-**5. Client Provisioning Rule Editor** — Click a resource to see configuration:
-- Rule name, OS conditions, results (agent package, profile, compliance module)
+**1. Threat Containment Page** (entirely missing)
+- New file: `src/pages/ThreatContainment.tsx`
+- Sub-sections: TC-NAC Service toggle, Vulnerability Assessment adapters (Qualys, Nexpose, Tenable), Compromised Endpoints table with ANC actions
+- Add to header nav or as Work Centers sub-section
+- Mock data: threat events, CVSS scores, adapter configs
 
-### Administration Section
+**2. Compliance / Posture Deep Dive** (currently just a table)
+- Expand Work Centers > Posture into full sub-pages:
+  - Posture Conditions (File, Registry, AV, Antispyware, Firewall, Disk Encryption, USB, Patch Mgmt) with Add/Edit dialogs
+  - Posture Requirements with condition-to-remediation mapping
+  - Posture Remediation Actions (AV, File, Script, Launch Program, Link, Patch, WSUS)
+  - Posture Policy table with OS/condition/requirement columns
+  - Agent Configuration & Profiles
+  - Acceptable Use Policy editor
+- New dialogs: `PostureConditionDialog.tsx`, `PostureRequirementDialog.tsx`
 
-**6. Network Device Detail Modal** — Clicking a device row opens a multi-tab dialog:
-- **General tab**: Name, Description, IP/Subnet, Device Profile, Network Device Group (Location, Device Type)
-- **Authentication Settings tab**: RADIUS Shared Secret, CoA Port (1700/3799), DTLS, KeyWrap settings
-- **TACACS+ tab**: Shared Secret, Single Connect toggle, legacy settings
-- **SNMP tab**: SNMP version (1/2c/3), Polling interval, Link Trap/MAC Trap query
-- **Advanced tab**: TrustSec (device ID, password, environment data download, peer authorization, SGT notifications, OOB TrustSec PAC)
+**3. Operations — Missing Sub-features**
+- Add TACACS Live Logs tab to Operations
+- Add System 360 sub-page with mock Grafana-style monitoring dashboards
+- Add Endpoint Debug Log Collector (input MAC, get simulated debug output)
+- Add Collection Filters management (filter rules for log suppression)
+- Add Message Codes/Catalogs viewer
+- Expand Reports with scheduled reports config and export simulation
 
-**7. Certificate Detail Modal** — Click any certificate to see:
-- Subject, Issuer, Serial Number, Signature Algorithm
-- Valid From/To, Key Usage, Extended Key Usage
-- Base64-encoded certificate text
-- "Renew", "Delete", "Export" buttons
+**4. Administration — Backup & Restore**
+- New sub-section under System: Backup & Restore
+- On-demand backup form (name, repository, encryption key)
+- Scheduled backup config (recurring schedule)
+- Backup history table, Restore history table
+- Repository management (SFTP, FTP, NFS, Local)
 
-**8. Internal User Detail Modal** — Click a user:
-- Username, First/Last Name, Email, Password Change
-- Identity Group assignment (dropdown)
-- Custom Attributes section (name-value pairs)
-- Account disabled toggle, Password Never Expires toggle, Change Password at Next Login
+### Phase 2 — Detail Dialogs & Sub-feature Depth
 
-**9. Admin User Detail Modal** — Click admin:
-- Username, Password, Admin Groups (multi-select)
-- Account Status, Description
-- Menu Access (tabs showing which menu items are accessible)
+**5. Policy — Missing Elements**
+- Downloadable ACLs page (DACL editor with ACE lines)
+- Allowed Protocols Service editor (toggle EAP types: PEAP, EAP-TLS, EAP-FAST, EAP-TTLS, EAP-MD5, LEAP)
+- RADIUS Vendor Dictionary editor (add custom vendor, attributes)
+- Policy Exceptions (Local & Global exception rules)
+- Time/Date conditions editor
+- MAB configuration toggle
 
-**10. Licensing Detail Panel** — Expand license to show:
-- Smart License registration status
-- Compliance details per license tier
-- Registration token, transport gateway settings
-- UDI (Universal Device Identifier) table
+**6. TrustSec — Deep Features**
+- SXP Devices management table (add SXP peer, configure mode Speaker/Listener)
+- SXP Domain Filters
+- TrustSec AAA Servers list
+- SGACL management (create/edit SGACLs with ACE content)
+- NDAC Authorization policy
+- TrustSec Dashboard with metrics, active SGT sessions, alarms
+- TrustSec CoA summary page
 
-**11. Settings Sub-pages** — Break out General Settings into real sub-sections:
-- **EAP-TLS Settings**: Session Resume, EAP-TLS Session Timeout
-- **RADIUS Settings**: Suppress Anomalous Clients, Detect Anomalous Clients, CoA type
-- **Profiler Settings**: CoA Type, Endpoint Attribute Filter
-- **Posture Settings**: Posture Lease, Remediation Timer, Default Posture Status
-- **pxGrid Settings**: Auto-approve, Certificate-based, Password-based
-- **Logging**: Log severity targets, collection filters, remote logging targets
+**7. Guest Access — Portal Configuration Depth**
+- Guest Type detail dialog (access duration, max devices, sponsor approval settings)
+- Portal Page Sequence editor (drag-and-drop page flow: Login → AUP → Change Password → Post-Login → Guest Device Registration)
+- Portal Customization panel (theme colors, logo upload, CSS override, localization)
+- Hotspot Portal type
+- Self-Registered Guest flow
 
-### New Mock Data Required
-- RADIUS attribute-value pairs per authorization profile
-- TrustSec device settings per network device
-- Certificate PEM text blocks
-- User custom attributes
-- EAP/RADIUS/Profiler/pxGrid settings values
+**8. BYOD — Expanded**
+- BYOD Portal page flow editor
+- Certificate Provisioning Portal settings
+- Native Supplicant Profile detail dialog (wireless settings per OS)
+- MDM Server integration panel (AirWatch, MobileIron, Meraki SM)
 
-## Technical Approach
+**9. Device Administration — Detail**
+- TACACS+ Shell Profile detail dialog (privilege level, idle timeout, attribute-value pairs)
+- Command Set detail dialog (permit/deny rules with command/argument patterns)
+- TACACS+ external server config
+- Device Admin conditions library
 
-### Files to Create
+### Phase 3 — Advanced Administration
+
+**10. Administration Additions**
+- Network Device Profiles (predefined CoA/URL-redirect behaviors per vendor: Cisco, Aruba, HP)
+- RADIUS Server Sequences config
+- Admin Groups detail (RBAC permission matrix)
+- Admin Access Policies (authentication policy for admin login)
+- SMTP Server config, NTP Server config, Proxy settings
+- Data Connect settings panel
+- API Gateway / ERS config panel
+- Patch Management page (installed patches list)
+
+**11. pxGrid Page**
+- pxGrid overview dashboard (connected clients, topic subscriptions)
+- pxGrid Clients table (client name, status, certificates)
+- WebSocket subscriber management
+- Certificate-based auth configuration
+- pxGrid Live Sessions viewer
+
+---
+
+## FILES TO CREATE
+
 | File | Purpose |
 |------|---------|
-| `src/components/PolicySetDetailDialog.tsx` | Full policy set editor modal with embedded auth/authz tables |
-| `src/components/AuthzProfileDetailDialog.tsx` | Authorization profile config with Common Tasks toggles |
-| `src/components/ConditionStudioDialog.tsx` | Visual condition builder with AND/OR blocks |
-| `src/components/NetworkDeviceDetailDialog.tsx` | Multi-tab device config (General/RADIUS/TACACS/SNMP/TrustSec) |
-| `src/components/CertificateDetailDialog.tsx` | Certificate viewer with PEM display |
-| `src/components/UserDetailDialog.tsx` | Internal/Admin user edit form |
-| `src/components/ProfilingPolicyDetailDialog.tsx` | Profiling rule detail with certainty factors |
+| `src/pages/ThreatContainment.tsx` | TC-NAC, Vulnerability Assessment, Compromised Endpoints |
+| `src/pages/PxGrid.tsx` | pxGrid clients, topics, live sessions |
+| `src/components/PostureConditionDialog.tsx` | Posture condition editor (File/Registry/AV/Firewall) |
+| `src/components/PostureRequirementDialog.tsx` | Requirement-to-remediation mapping |
+| `src/components/DACLEditorDialog.tsx` | Downloadable ACL editor |
+| `src/components/AllowedProtocolsDialog.tsx` | EAP protocol toggles |
+| `src/components/GuestTypeDetailDialog.tsx` | Guest type config |
+| `src/components/PortalCustomizationDialog.tsx` | Portal theme/page flow editor |
+| `src/components/ShellProfileDialog.tsx` | TACACS shell profile detail |
+| `src/components/CommandSetDialog.tsx` | TACACS command set rules |
+| `src/components/SXPDeviceDialog.tsx` | SXP peer configuration |
+| `src/components/BackupRestorePanel.tsx` | Backup/restore UI |
 
-### Files to Modify
+## FILES TO MODIFY
+
 | File | Changes |
 |------|---------|
-| `src/lib/mockData.ts` | Add detailed attributes for auth profiles, RADIUS AVPs, TrustSec settings, cert PEM data |
-| `src/pages/Policy.tsx` | Wire click handlers on every table row to open detail dialogs; add inline editing affordances |
-| `src/pages/Administration.tsx` | Wire click handlers for network devices, certificates, users; expand Settings into sub-tabs with real ISE setting groups (EAP-TLS, RADIUS, Profiler, pxGrid, Logging) |
+| `src/lib/mockData.ts` | Add posture conditions/requirements, threat events, CVSS data, SXP peers, DACLs, allowed protocols, guest types detail, backup history, pxGrid clients |
+| `src/lib/mockDataExtended.ts` | Add shell profiles detail, command set rules, portal page sequences, NDPs |
+| `src/pages/WorkCenters.tsx` | Expand Posture with conditions/requirements/remediation sub-pages; expand Guest with type detail; expand BYOD with MDM; add Device Admin details |
+| `src/pages/Operations.tsx` | Add TACACS Live Logs, System 360, Debug Log Collector, Collection Filters, Message Codes |
+| `src/pages/Administration.tsx` | Add Backup/Restore, Repositories, Admin Groups detail, NDP, RADIUS Sequences, SMTP/NTP/Proxy, Data Connect, API Gateway |
+| `src/pages/Policy.tsx` | Add DACLs page, Allowed Protocols editor, Policy Exceptions, Vendor Dictionaries, Time/Date conditions |
+| `src/components/CiscoHeader.tsx` | Add pxGrid nav item if separate page |
+| `src/App.tsx` | Add routes for ThreatContainment, pxGrid |
 
-### UI Patterns
-- All detail modals use `max-w-2xl` or `max-w-3xl` Dialog with internal tab navigation
-- Form fields use ISE-style layout: label left (40% width), input right (60% width)
-- Toggle switches for boolean settings (matching real ISE checkbox/toggle style)
-- "Save" and "Cancel" footer buttons in Cisco blue
-- Breadcrumb within dialog header showing context path
+## ESTIMATED SCOPE
+- ~12 new component files
+- ~2 new page files
+- ~6 major file modifications
+- ~800 lines new mock data
+- Implementation in 3 phases to maintain stability
 
