@@ -386,7 +386,7 @@ const Administration = () => {
                     <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Location</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Building A</option><option>Building B</option><option>Data Center</option><option>DMZ</option></select></div>
                   </div>
                 </div>
-                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDeviceOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => setAddDeviceOpen(false)}>Save</Button></DialogFooter>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDeviceOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => { toast.success("Network device added successfully"); setAddDeviceOpen(false); }}>Save</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           </>
