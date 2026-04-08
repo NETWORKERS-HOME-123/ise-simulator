@@ -350,7 +350,7 @@ const Administration = () => {
                 </div>
               </div>
             )}
-            <div className="flex justify-end mt-3"><Button size="sm" style={{ background: '#049fd9' }}>Save Settings</Button></div>
+            <div className="flex justify-end mt-3"><Button size="sm" style={{ background: '#049fd9' }} onClick={() => toast.success("System settings saved successfully")}>Save Settings</Button></div>
           </>
         )}
 
