@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { generateRadiusLogs, generateLiveSessions, reportCategories, ancEndpoints } from "@/lib/mockData";
+import { useSimulation } from "@/context/ISESimulationContext";
+import { generateRadiusLogs, generateLiveSessions, reportCategories, generateMacAddress } from "@/lib/mockData";
 import { generateTacacsLogs, messageCodes } from "@/lib/mockDataGap";
+import { simulateAuthentication } from "@/lib/authSimulator";
+import PolicyFlowDiagram from "@/components/PolicyFlowDiagram";
+import type { AuthSimResult } from "@/lib/authSimulator";
 import { CheckCircle, XCircle, RefreshCw, Pause, Play, Search, Terminal, Wifi, Activity, FileBarChart, ShieldAlert, Filter, Server, BookOpen, BarChart3 } from "lucide-react";
 import LogDetailDialog from "@/components/LogDetailDialog";
 
