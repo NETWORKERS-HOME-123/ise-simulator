@@ -1,194 +1,222 @@
 
 
-# Interactive Training Simulation Enhancement Plan
+# Factual Accuracy Audit & Corrections Plan
 
-## Purpose
-Transform the current Cisco ISE simulator from a display-oriented demo into a fully interactive training tool where students can perform hands-on labs — creating, editing, deleting, and testing configurations with realistic feedback loops.
-
----
-
-## What's Missing for Training
-
-Currently, most features are **read-only displays** with static mock data. Students can click rows to view details but cannot:
-- Create new objects from scratch (devices, users, policies, endpoints)
-- Delete items with confirmation workflows
-- See cause-and-effect (e.g., "I changed a policy, now this endpoint gets denied")
-- Follow guided lab exercises
-- Search/filter consistently across all pages
-- Get validation errors on bad input
+## Research Sources Used
+- **Official**: Cisco ISE 3.3 Administrator Guide (all 16 chapters) — cisco.com/c/en/us/td/docs/security/ise/3-3/admin_guide/
+- **Chapters reviewed**: Overview, Licensing, Deployment, Basic Setup, Maintain & Monitor, Device Administration, Guest & Secure WiFi, Asset Visibility, BYOD, Secure Access, Segmentation, Compliance, Threat Containment, Cisco pxGrid, Integration, Troubleshoot
+- **Cross-referenced**: Network Device Definition Settings, RADIUS/TACACS/SNMP field tables, Authorization Profile Common Tasks, DACL configuration, Policy Set structure, Conditions Studio
 
 ---
 
-## Implementation Plan
+## CRITICAL INACCURACIES FOUND
 
-### 1. Global State Management with CRUD Operations
-**Problem**: All data is imported as constants from mock files — nothing persists across interactions.
+### 1. Navigation Structure is Wrong
 
-**Solution**: Create a `src/context/ISESimulationContext.tsx` React context that:
-- Loads all mock data into `useState` on mount
-- Exposes `add`, `update`, `delete` functions for every entity type (network devices, users, policy sets, endpoints, certificates, ACLs, etc.)
-- Wraps the app so all pages share live state
-- Shows toast confirmations on every mutation
+**Real ISE 3.3 top navigation**: Home | Context Visibility | Operations | Policy | Administration | **Work Centers** (contains sub-menus)
 
-**Files**: Create `src/context/ISESimulationContext.tsx`, modify `src/App.tsx` to wrap with provider, update all pages to use context instead of direct imports.
+The current simulator has the correct top tabs. However, the **left navigation menus within each section** have significant structural errors:
 
-### 2. Add/Create Dialogs for Every Entity
-**Problem**: "Add" buttons exist on some pages but most just show `toast.info("New rule added")` without actually creating anything.
+**Policy page — wrong structure:**
+- Current: Separate nav sections for "Authentication", "Authorization", "Policy Elements"
+- **Real ISE**: Policy > Policy Sets (clicking into a policy set reveals embedded Authentication and Authorization tables). There are NO separate "Authentication Policies" or "Authorization Policies" top-level nav items. The left nav is:
+  - Policy Sets
+  - Policy Elements > Results > Authorization > Authorization Profiles
+  - Policy Elements > Results > Authorization > Downloadable ACLs  
+  - Policy Elements > Conditions > Library Conditions
+  - Policy Elements > Dictionaries > System / User / RADIUS Vendor
+  - Policy Elements > Results > Authentication > Allowed Protocols
+  - Profiling > Profiling Policies
+  - Client Provisioning > Resources
 
-**Solution**: Build functional "Add New" dialogs for:
-- **Network Device**: Form with Name, IP, RADIUS secret, device type, location — adds to device table
-- **Internal User**: Username, password, email, identity group — adds to users table
-- **Policy Set**: Name, conditions, status — adds to policy sets and becomes clickable
-- **Authorization Profile**: Name, access type, DACL, VLAN — adds to profiles
-- **DACL**: Name, ACE content editor — adds to DACL list
-- **Endpoint (manual)**: MAC, IP, profile, identity group — adds to Context Visibility
-- **Certificate Signing Request**: CN, SAN, key size — generates mock CSR
-- **ANC Policy application**: Already partially works, enhance with validation
+**Administration page — wrong hierarchy:**
+- Current: "System Configuration" with SMTP/NTP/ERS is a separate section
+- **Real ISE**: Administration left nav is:
+  - System > Deployment / Licensing / Certificates / Logging / Maintenance (Backup, Restore, Repository, Patch) / Settings
+  - Identity Management > Identity Source Sequences / Internal Users / External Identity Sources / Identity Groups / Settings
+  - Network Resources > Network Devices / Network Device Groups / External RADIUS Servers / RADIUS Server Sequences / NAC Managers / Network Device Profiles
+  - Device Administration > (link to Work Centers)
+  - pxGrid Services > (link to pxGrid)
+  - System > Admin Access > Administrators / Admin Groups / Authentication / Authorization
+  - System > Settings > SMTP Server / Repository / Alarm Settings / General / Proxy
 
-Each dialog validates inputs (e.g., MAC format, IP format, required fields) and shows inline error messages.
+**Work Centers page — wrong sections:**
+- Current: Guest Access, BYOD, Device Administration, Posture, TrustSec, Network Access
+- **Real ISE Work Centers**: Each Work Center is its own sub-menu system:
+  - Network Access > Overview / Policy Sets / Ext RADIUS Servers / External ID Sources / Network Devices
+  - Guest Access > Overview / Portals & Components / Settings / Reports
+  - TrustSec > Overview / Components (SGTs, SGACLs, IP-SGT, SXP) / TrustSec Policy (Egress, Matrix) / Settings
+  - BYOD > Overview / Portals & Components / Settings
+  - Device Administration > Overview / Policy Sets / Policy Elements / Network Resources / Reports / Settings
+  - Posture > Overview / Policy Elements (Conditions, Requirements, Remediations) / Posture Policy / Client Provisioning / Settings
 
-**Files**: Create `src/components/AddEntityDialog.tsx` (generic reusable form dialog), modify each page to wire "Add" buttons.
+### 2. Network Device Fields — Missing Official Fields
 
-### 3. Delete with Confirmation Dialogs
-**Problem**: No delete functionality anywhere.
+Per Cisco documentation, the Network Device form has these exact fields the current `NetworkDeviceDetailDialog.tsx` may be missing or labeling incorrectly:
+- **General**: Name, Description, IP Address/IP Range (with exclude), Device Profile (vendor dropdown), Model Name, Software Version, Network Device Group (Location + IPSEC + Device Type)
+- **RADIUS**: Protocol, Shared Secret, Use Second Shared Secret, CoA Port (default from device profile), RADIUS DTLS (DTLS Required, Shared Secret, CoA Port, Issuer CA, DNS Name), Enable KeyWrap, Key Encryption Key, Message Authenticator Code Key, Key Input Format (ASCII/Hex)
+- **TACACS+**: Shared Secret, Retired Shared Secret, Retire button, Remaining Retired Period, Enable Single Connect Mode (Legacy/Draft Compliance)
+- **SNMP**: SNMP Version (1/2c/3), SNMP RO Community (v1/v2c), Username/Security Level/Auth Protocol/Auth Password/Privacy Protocol/Privacy Password (v3), Polling Interval, Link Trap Query, Mac Trap Query, Originating PSN
 
-**Solution**: Add delete buttons (trash icon) to table rows and inside detail dialogs. Each triggers an AlertDialog:
-- "Are you sure you want to delete network device 'SW-ACCESS-01'?"
-- "This action cannot be undone."
-- Red "Delete" button, gray "Cancel" button
-- On confirm: remove from context state, show `toast.success("Deleted")`
+### 3. Authorization Profile Common Tasks — Incomplete
 
-**Files**: Create `src/components/ConfirmDeleteDialog.tsx`, add delete icons to table rows in Policy.tsx, Administration.tsx, WorkCenters.tsx.
+Per official doc, the Common Tasks section should include:
+- DACL Name (IPv4 checkbox + dropdown)
+- IPv6 DACL Name (separate checkbox)
+- ACL (Filter-ID) with IPv4/IPv6 variants
+- Airespace ACL Name / Airespace IPv6 ACL Name
+- VLAN (ID/Name with Tag)
+- Voice Domain Permission
+- Web Redirection (type: CWA/MDM/NSP/Client Provisioning + Static IP/FQDN + ACL + Portal)
+- Auto SmartPort
+- Access Type (ACCESS_ACCEPT)
+- Interface Template
+- ASA VPN
+- Reauthentication (Timer + Connectivity: Default/RADIUS-Request)
+- MACSec Policy
+- NEAT
+- Web Authentication (Local Web Auth)
+- Airespace Wireless Multicast
+- AVC Profile
 
-### 4. Authentication Simulation Engine
-**Problem**: Session trace shows hardcoded output. No cause-and-effect between policies and auth results.
+### 4. DACL Default Profiles Wrong
 
-**Solution**: Build a `src/lib/authSimulator.ts` that:
-- Takes input: username, MAC, NAS IP, auth method
-- Walks through policy sets in order (from context state)
-- Matches conditions against input
-- Returns step-by-step trace showing which policy matched, which auth profile applied, pass/fail reason
-- If user modifies a policy (e.g., disables a rule), the simulator reflects that
+Per official doc, default DACLs are:
+- DENY_ALL_IPV4_TRAFFIC
+- PERMIT_ALL_IPV4_TRAFFIC
+- DENY_ALL_IPV6_TRAFFIC
+- PERMIT_ALL_IPV6_TRAFFIC
 
-Wire this into:
-- Operations > Troubleshoot > Session Trace (replaces hardcoded output)
-- Operations > RADIUS Auth Test (currently no-op)
-- A new "Test Authentication" button inside Policy Set detail dialog
+The current mock data may not match these exact names and the DACL editor should have an IP Version field (IPv4/IPv6/Agnostic) and a "Check DACL Syntax" button.
 
-**Files**: Create `src/lib/authSimulator.ts`, modify `src/pages/Operations.tsx` troubleshoot section.
+### 5. Operations > Live Logs Structure Wrong
 
-### 5. Guided Lab Mode with Step-by-Step Exercises
-**Problem**: Students don't know what to do — no guided path.
+Per official doc, the correct menu paths are:
+- Operations > RADIUS > Live Logs (not just "Live Logs")
+- Operations > RADIUS > Live Sessions
+- Operations > TACACS > Live Logs
+- Operations > Reports > (categories)
+- Operations > Troubleshoot > Diagnostic Tools > General Tools
+- Operations > Troubleshoot > Download Logs
 
-**Solution**: Create `src/components/LabGuidePanel.tsx` — a slide-out panel with pre-built lab exercises:
+### 6. Policy Set Status Values Incomplete
 
-**Lab 1: Basic 802.1X Setup**
-- Step 1: Navigate to Administration > Network Devices > Add a switch (name, IP, secret)
-- Step 2: Navigate to Policy > Policy Sets > Create a new policy set for Wired
-- Step 3: Add an authentication rule using EAP-TLS
-- Step 4: Add an authorization rule mapping to PermitAccess
-- Step 5: Go to Operations > Troubleshoot > Test authentication
-- Each step has a "Check" button that validates the student completed it
+Per official documentation, Policy Set status can be:
+- **Enabled**: Active policy
+- **Disabled**: Inactive, will not be evaluated
+- **Monitor Only**: Evaluated but NOT enforced, results visible in Live Log
 
-**Lab 2: Guest Access Configuration**
-- Configure a guest portal, create a sponsor group, test guest login
+The current simulator may be missing "Monitor Only" mode.
 
-**Lab 3: BYOD Onboarding**
-- Set up BYOD portal, configure native supplicant profile
+### 7. Failure Reason Codes Non-Standard
 
-**Lab 4: TrustSec Segmentation**
-- Create SGTs, build egress policy matrix, add IP-SGT mappings
-
-**Lab 5: Posture Compliance**
-- Create posture conditions, requirements, policy, test compliance
-
-The panel shows progress (steps completed), highlights which nav item to click, and validates completion.
-
-**Files**: Create `src/components/LabGuidePanel.tsx`, `src/lib/labDefinitions.ts`, add toggle button in `CiscoHeader.tsx`.
-
-### 6. Real-Time Live Log Correlation
-**Problem**: Live logs generate random data unrelated to user actions.
-
-**Solution**: When a student performs a "Test Authentication" or adds/modifies a policy, inject a correlated log entry into the Live Logs feed showing:
-- The exact username/MAC they tested
-- The policy set that matched
-- Pass/Fail based on current policy state
-- Timestamp matching the action
-
-**Files**: Modify `src/pages/Operations.tsx`, wire to simulation context.
-
-### 7. Search and Filter on Every Table
-**Problem**: Only Context Visibility has search. Other pages have no filtering.
-
-**Solution**: Add a reusable `<TableToolbar>` component above every data table with:
-- Search input (filters across all visible columns)
-- Column-specific dropdown filters where relevant
-- Row count display
-- Export CSV button (generates and downloads actual CSV)
-
-**Files**: Create `src/components/TableToolbar.tsx`, apply to all table instances.
-
-### 8. Bulk Actions on Tables
-**Problem**: No multi-select or bulk operations.
-
-**Solution**: Add checkboxes to table rows with:
-- Select all / deselect all
-- Bulk delete, bulk enable/disable, bulk export
-- Action bar appears when items are selected
-
-**Files**: Enhance the reusable `Table` component in each page.
-
-### 9. Endpoint Right-Click Context Menu
-**Problem**: Only click-to-view is available.
-
-**Solution**: Add right-click context menu on endpoint/session rows with:
-- View Details
-- Apply ANC Policy (Quarantine/Shutdown)
-- Change Authorization (CoA)
-- Delete Endpoint
-- Copy MAC Address
-
-**Files**: Use shadcn `ContextMenu` component, apply to Context Visibility and Live Sessions.
-
-### 10. Visual Policy Flow Diagram
-**Problem**: Students can't visualize how authentication flows through policy sets.
-
-**Solution**: Create `src/components/PolicyFlowDiagram.tsx`:
-- Shows a flowchart: Request → Policy Set Match → Authentication → Authorization → Result
-- Highlights the active path when running a test authentication
-- Uses simple SVG boxes and arrows (no external library needed)
-
-**Files**: Create `src/components/PolicyFlowDiagram.tsx`, embed in Policy page and Troubleshoot.
+The current mock data uses failure reason codes like "24408 User not found" — these are close but need verification against official ISE message catalogs. Real ISE uses 5-digit message codes like:
+- 5400 Authentication failed
+- 5405 RADIUS Request dropped
+- 5440 Endpoint is not an active directory member
+- 22056 Subject not found in the applicable identity store(s)
+- 24408 is NOT a real ISE code
 
 ---
 
-## File Summary
+## IMPLEMENTATION PLAN
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/context/ISESimulationContext.tsx` | Create | Global mutable state for all entities |
-| `src/components/AddEntityDialog.tsx` | Create | Reusable add/create form dialog |
-| `src/components/ConfirmDeleteDialog.tsx` | Create | Delete confirmation dialog |
-| `src/components/LabGuidePanel.tsx` | Create | Guided lab exercise panel |
-| `src/components/TableToolbar.tsx` | Create | Search/filter/export toolbar |
-| `src/components/PolicyFlowDiagram.tsx` | Create | Visual auth flow diagram |
-| `src/lib/labDefinitions.ts` | Create | Lab exercise step definitions |
-| `src/lib/authSimulator.ts` | Create | Policy evaluation engine |
-| `src/App.tsx` | Modify | Wrap with SimulationContext provider |
-| `src/components/CiscoHeader.tsx` | Modify | Add Lab Guide toggle button |
-| `src/pages/Policy.tsx` | Modify | CRUD operations, search, delete, flow diagram |
-| `src/pages/Administration.tsx` | Modify | CRUD operations, functional add forms |
-| `src/pages/Operations.tsx` | Modify | Correlated logs, auth simulator integration |
-| `src/pages/ContextVisibility.tsx` | Modify | Context menu, bulk actions |
-| `src/pages/WorkCenters.tsx` | Modify | CRUD, search, delete |
-| `src/pages/ThreatContainment.tsx` | Modify | CRUD, search |
-| `src/pages/PxGrid.tsx` | Modify | CRUD, search |
+### Phase 1: Fix Navigation Structure (Critical — Affects Training Muscle Memory)
 
-## Implementation Order
-1. SimulationContext (foundation for everything)
-2. AddEntityDialog + ConfirmDeleteDialog (CRUD everywhere)
-3. TableToolbar (search/filter on all pages)
-4. AuthSimulator + correlated logs (cause-and-effect)
-5. LabGuidePanel + lab definitions (guided training)
-6. PolicyFlowDiagram + context menus (visual learning aids)
+**1a. Fix Policy Page Left Nav**
+- Remove separate "Authentication" and "Authorization" sections
+- Restructure to match real ISE:
+
+```text
+Policy Sets
+Policy Elements
+  ├── Results
+  │   ├── Authorization Profiles
+  │   ├── Downloadable ACLs
+  │   └── Allowed Protocols
+  ├── Conditions
+  │   ├── Library Conditions
+  │   └── Time & Date Conditions
+  └── Dictionaries
+      ├── System
+      ├── User
+      └── RADIUS Vendor
+Profiling
+  └── Profiling Policies
+Client Provisioning
+  └── Resources
+```
+
+**1b. Fix Administration Page Left Nav**
+- Restructure to match real ISE hierarchy with correct groupings
+- Move SMTP/NTP under System > Settings
+- Add Admin Access sub-section under System
+- Rename sections to match official labels exactly
+
+**1c. Fix Work Centers Page Structure**
+- Each Work Center should mirror the real sub-nav (Overview / Policy Elements / Policy / Settings / Reports)
+
+**1d. Fix Operations Page Tabs**
+- Change from flat tabs to proper structure: RADIUS > Live Logs, RADIUS > Live Sessions, TACACS > Live Logs, Reports, Troubleshoot
+
+### Phase 2: Fix Field-Level Accuracy
+
+**2a. Network Device Detail Dialog**
+- Add missing fields: IP Range option, Device Profile vendor dropdown, Model Name, Software Version, Use Second Shared Secret, RADIUS DTLS section, KeyWrap settings, TACACS Retire mechanism, Enable Single Connect Mode, SNMP v3 full settings (Security Level, Auth/Privacy Protocol)
+- Fix field labels to match official documentation exactly
+
+**2b. Authorization Profile Dialog**
+- Add missing Common Tasks: ACL (Filter-ID) IPv4/IPv6, Airespace ACL, MACSec Policy, NEAT, Interface Template, ASA VPN, AVC Profile, Web Authentication
+- Add IPv6 DACL Name as separate option
+- Fix "Attributes Details" panel to show computed RADIUS AVPs dynamically
+
+**2c. DACL Editor**
+- Add IP Version selector (IPv4/IPv6/Agnostic)
+- Fix default DACL names to exact Cisco names
+- Add "Check DACL Syntax" validation button
+
+**2d. Policy Set Detail Dialog**
+- Add "Monitor Only" status option
+- Fix authorization rule columns to show: Status, Rule Name, Conditions, Results (Profiles), Results (Security Groups), Hits, Actions
+
+### Phase 3: Fix Mock Data Accuracy
+
+**3a. Fix Failure Reason Codes**
+- Replace fake codes with real ISE message codes from the official message catalog
+- Key codes: 5400, 5405, 5412, 5434, 5440, 12002, 12013, 12014, 12015, 22028, 22040, 22056, 24408 (verify each)
+
+**3b. Fix Default Profile/Policy Names**
+- Default DACLs: DENY_ALL_IPV4_TRAFFIC, PERMIT_ALL_IPV4_TRAFFIC, DENY_ALL_IPV6_TRAFFIC, PERMIT_ALL_IPV6_TRAFFIC
+- Default Authorization Profiles: PermitAccess, DenyAccess, Cisco_WebAuth, Blackhole_Wireless_Access
+- Default Policy Set: "Default" (always last, cannot be deleted)
+
+**3c. Fix Session ID Format**
+- Real ISE session IDs follow format: `0a{node_hex}:{port_hex}/{timestamp_hex}/session_seq` 
+- Current random format is not realistic
+
+---
+
+## FILES TO MODIFY
+
+| File | Changes |
+|------|---------|
+| `src/pages/Policy.tsx` | Restructure left nav sections to match real ISE; remove separate Auth/Authz sections |
+| `src/pages/Administration.tsx` | Restructure left nav; move SMTP/NTP under Settings; add Admin Access sub-section |
+| `src/pages/WorkCenters.tsx` | Restructure each Work Center with proper sub-nav matching real ISE |
+| `src/pages/Operations.tsx` | Restructure tabs to RADIUS/TACACS/Reports/Troubleshoot hierarchy |
+| `src/components/NetworkDeviceDetailDialog.tsx` | Add all missing fields per official documentation |
+| `src/components/AuthzProfileDetailDialog.tsx` | Add missing Common Tasks (ACL, Airespace, MACSec, NEAT, etc.) |
+| `src/components/DACLEditorDialog.tsx` | Add IP Version, fix defaults, add syntax check |
+| `src/components/PolicySetDetailDialog.tsx` | Add Monitor Only status, fix column structure |
+| `src/lib/mockData.ts` | Fix failure codes, session ID format, default names |
+| `src/lib/mockDataGap.ts` | Fix DACL defaults, add missing message codes |
+| `src/lib/authSimulator.ts` | Use correct ISE message codes in trace output |
+
+## IMPLEMENTATION ORDER
+1. Navigation structure fixes (Policy, Administration, Work Centers, Operations)
+2. Network Device dialog field corrections
+3. Authorization Profile dialog field corrections
+4. DACL editor corrections
+5. Mock data accuracy (failure codes, session IDs, default names)
+6. Auth simulator trace output corrections
 
