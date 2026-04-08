@@ -115,7 +115,7 @@ const Operations = () => {
       <div className="text-xs" style={{ color: '#666' }}>Operations &gt; <span className="font-semibold" style={{ color: '#333' }}>{tabs.find(t => t.key === tab)?.label}</span></div>
       <div className="flex items-center border-b border-border overflow-x-auto">
         {tabs.map(t => (
-          <button key={t.key} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors border-b-2 whitespace-nowrap" style={{ color: tab === t.key ? '#049fd9' : '#666', borderBottomColor: tab === t.key ? '#049fd9' : 'transparent' }} onClick={() => setTab(t.key)}>
+          <button key={t.key} data-walkthrough={(t as any).wt || undefined} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors border-b-2 whitespace-nowrap" style={{ color: tab === t.key ? '#049fd9' : '#666', borderBottomColor: tab === t.key ? '#049fd9' : 'transparent' }} onClick={() => setTab(t.key)}>
             {t.icon} {t.label}
           </button>
         ))}
