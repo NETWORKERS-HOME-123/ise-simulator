@@ -26,7 +26,7 @@ const Operations = () => {
   const [ancApplyOpen, setAncApplyOpen] = useState(false);
   const [ancMac, setAncMac] = useState('');
   const [ancPolicy, setAncPolicy] = useState('ANC-Quarantine');
-  const [localAnc, setLocalAnc] = useState(ancEndpoints);
+  const [localAnc, setLocalAnc] = useState(sim.ancEndpoints);
   const [debugMac, setDebugMac] = useState('');
   const [debugOutput, setDebugOutput] = useState<string[]>([]);
 
