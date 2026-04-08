@@ -1,12 +1,17 @@
 import { useState, useEffect, useRef } from "react";
-import { generateRadiusLogs, generateLiveSessions, reportCategories, ancEndpoints } from "@/lib/mockData";
+import { useSimulation } from "@/context/ISESimulationContext";
+import { generateRadiusLogs, generateLiveSessions, reportCategories, generateMacAddress } from "@/lib/mockData";
 import { generateTacacsLogs, messageCodes } from "@/lib/mockDataGap";
+import { simulateAuthentication } from "@/lib/authSimulator";
+import PolicyFlowDiagram from "@/components/PolicyFlowDiagram";
+import type { AuthSimResult } from "@/lib/authSimulator";
 import { CheckCircle, XCircle, RefreshCw, Pause, Play, Search, Terminal, Wifi, Activity, FileBarChart, ShieldAlert, Filter, Server, BookOpen, BarChart3 } from "lucide-react";
 import LogDetailDialog from "@/components/LogDetailDialog";
 
 type Tab = 'live-logs' | 'live-sessions' | 'tacacs-logs' | 'troubleshoot' | 'reports' | 'anc' | 'system360' | 'message-codes';
 
 const Operations = () => {
+  const sim = useSimulation();
   const [tab, setTab] = useState<Tab>('live-logs');
   const [logs, setLogs] = useState(() => generateRadiusLogs(30));
   const [sessions] = useState(() => generateLiveSessions(40));
@@ -22,7 +27,7 @@ const Operations = () => {
   const [ancApplyOpen, setAncApplyOpen] = useState(false);
   const [ancMac, setAncMac] = useState('');
   const [ancPolicy, setAncPolicy] = useState('ANC-Quarantine');
-  const [localAnc, setLocalAnc] = useState(ancEndpoints);
+  const [localAnc, setLocalAnc] = useState(sim.ancEndpoints);
   const [debugMac, setDebugMac] = useState('');
   const [debugOutput, setDebugOutput] = useState<string[]>([]);
 
