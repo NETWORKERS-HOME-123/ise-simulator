@@ -41,21 +41,73 @@ const sections: NavSection[] = [
 ];
 
 const Policy = () => {
+  const sim = useSimulation();
   const [active, setActive] = useState('policy-sets');
-  const [selectedPolicySet, setSelectedPolicySet] = useState<typeof policySets[0] | null>(null);
+  const [selectedPolicySet, setSelectedPolicySet] = useState<any>(null);
   const [policySetOpen, setPolicySetOpen] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<typeof authorizationProfiles[0] | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [selectedCondition, setSelectedCondition] = useState<typeof policyConditions[0] | null>(null);
+  const [selectedCondition, setSelectedCondition] = useState<any>(null);
   const [conditionOpen, setConditionOpen] = useState(false);
   const [selectedProfilingPolicy, setSelectedProfilingPolicy] = useState<typeof profilingPolicies[0] | null>(null);
   const [profilingOpen, setProfilingOpen] = useState(false);
   const [selectedCPResource, setSelectedCPResource] = useState<typeof clientProvisioningResources[0] | null>(null);
   const [cpResourceOpen, setCpResourceOpen] = useState(false);
-  const [selectedDACL, setSelectedDACL] = useState<typeof downloadableACLs[0] | null>(null);
+  const [selectedDACL, setSelectedDACL] = useState<any>(null);
   const [daclOpen, setDaclOpen] = useState(false);
   const [selectedProtocol, setSelectedProtocol] = useState<typeof allowedProtocolsServices[0] | null>(null);
   const [protocolOpen, setProtocolOpen] = useState(false);
+  // Add Policy Set form
+  const [addPolicyOpen, setAddPolicyOpen] = useState(false);
+  const [newPolicyName, setNewPolicyName] = useState('');
+  const [newPolicyCondition, setNewPolicyCondition] = useState('Wired_802.1X');
+  // Add Auth Profile form
+  const [addProfileOpen, setAddProfileOpen] = useState(false);
+  const [newProfileName, setNewProfileName] = useState('');
+  const [newProfileAccess, setNewProfileAccess] = useState('ACCESS_ACCEPT');
+  // Add DACL form
+  const [addDaclOpen, setAddDaclOpen] = useState(false);
+  const [newDaclName, setNewDaclName] = useState('');
+  const [newDaclContent, setNewDaclContent] = useState('permit ip any any');
+
+  const handleAddPolicySet = () => {
+    if (!newPolicyName.trim()) { toast.error('Policy set name is required'); return; }
+    sim.addPolicySet({
+      name: newPolicyName,
+      conditions: newPolicyCondition,
+      status: 'Enabled',
+      authPolicy: 'Default Network Access',
+      hits: 0,
+    } as any);
+    setAddPolicyOpen(false);
+    setNewPolicyName('');
+  };
+
+  const handleAddProfile = () => {
+    if (!newProfileName.trim()) { toast.error('Profile name is required'); return; }
+    sim.addAuthzProfile({
+      name: newProfileName,
+      type: 'Standard',
+      description: `Custom profile - ${newProfileName}`,
+      accessType: newProfileAccess,
+      vlan: '',
+      dacl: '',
+    } as any);
+    setAddProfileOpen(false);
+    setNewProfileName('');
+  };
+
+  const handleAddDACL = () => {
+    if (!newDaclName.trim()) { toast.error('DACL name is required'); return; }
+    sim.addDACL({
+      name: newDaclName,
+      description: `Custom DACL - ${newDaclName}`,
+      content: newDaclContent,
+      ipVersion: 'IPv4',
+    } as any);
+    setAddDaclOpen(false);
+    setNewDaclName(''); setNewDaclContent('permit ip any any');
+  };
 
   return (
     <div className="flex">
