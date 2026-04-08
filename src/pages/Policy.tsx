@@ -284,8 +284,8 @@ const Policy = () => {
                   );
                 })()}
                 <DialogFooter className="gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setCpResourceOpen(false)}>Close</Button>
-                  <Button size="sm" style={{ background: '#049fd9' }} onClick={() => setCpResourceOpen(false)}>Save</Button>
+                  <Button variant="outline" size="sm" onClick={() => { toast("Changes discarded"); setCpResourceOpen(false); }}>Close</Button>
+                  <Button size="sm" style={{ background: '#049fd9' }} onClick={() => { toast.success(`Resource "${selectedCPResource?.name}" saved`); setCpResourceOpen(false); }}>Save</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
