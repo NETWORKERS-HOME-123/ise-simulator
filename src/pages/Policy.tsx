@@ -236,7 +236,7 @@ const Policy = () => {
             <div className="flex items-center gap-2 mb-2"><FileText size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Library Conditions</span></div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Conditions &gt; Library Conditions. Click a condition to open the Condition Studio editor.</div>
             <Table headers={['Name', 'Type', 'Attribute', 'Operator', 'Value', 'Description']}
-              rows={policyConditions.map(c => [
+              rows={sim.conditions.map(c => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{c.name}</span>,
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: c.type === 'Compound' ? '#fbab18' + '30' : '#049fd9' + '20', color: c.type === 'Compound' ? '#b47a00' : '#049fd9' }}>{c.type}</span>,
                 <span className="font-mono text-[11px]">{c.attribute}</span>,
@@ -244,7 +244,7 @@ const Policy = () => {
                 <span className="font-mono">{c.value}</span>,
                 <span style={{ color: '#666' }}>{c.description}</span>,
               ])}
-              onRowClick={(i) => { setSelectedCondition(policyConditions[i]); setConditionOpen(true); }}
+              onRowClick={(i) => { setSelectedCondition(sim.conditions[i]); setConditionOpen(true); }}
             />
             <ConditionStudioDialog condition={selectedCondition} open={conditionOpen} onOpenChange={setConditionOpen} />
           </>
