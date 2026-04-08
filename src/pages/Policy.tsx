@@ -1,7 +1,14 @@
 import { useState } from "react";
 import ISELeftNav, { NavSection } from "@/components/ISELeftNav";
 import { policySets, authenticationPolicies, authorizationPolicies, authorizationProfiles, policyConditions, radiusDictionaries, profilingPolicies, clientProvisioningResources } from "@/lib/mockData";
+import { clientProvisioningRuleDetails } from "@/lib/mockDataExtended";
 import { Shield, CheckCircle, XCircle, FileText, Layers, BookOpen, Cpu, Download } from "lucide-react";
+import PolicySetDetailDialog from "@/components/PolicySetDetailDialog";
+import AuthzProfileDetailDialog from "@/components/AuthzProfileDetailDialog";
+import ConditionStudioDialog from "@/components/ConditionStudioDialog";
+import ProfilingPolicyDetailDialog from "@/components/ProfilingPolicyDetailDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const sections: NavSection[] = [
   { label: 'Policy', items: [{ label: 'Policy Sets', key: 'policy-sets' }], defaultOpen: true },
@@ -19,6 +26,22 @@ const sections: NavSection[] = [
 const Policy = () => {
   const [active, setActive] = useState('policy-sets');
 
+  // Dialog states
+  const [selectedPolicySet, setSelectedPolicySet] = useState<typeof policySets[0] | null>(null);
+  const [policySetOpen, setPolicySetOpen] = useState(false);
+
+  const [selectedProfile, setSelectedProfile] = useState<typeof authorizationProfiles[0] | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const [selectedCondition, setSelectedCondition] = useState<typeof policyConditions[0] | null>(null);
+  const [conditionOpen, setConditionOpen] = useState(false);
+
+  const [selectedProfilingPolicy, setSelectedProfilingPolicy] = useState<typeof profilingPolicies[0] | null>(null);
+  const [profilingOpen, setProfilingOpen] = useState(false);
+
+  const [selectedCPResource, setSelectedCPResource] = useState<typeof clientProvisioningResources[0] | null>(null);
+  const [cpResourceOpen, setCpResourceOpen] = useState(false);
+
   return (
     <div className="flex">
       <ISELeftNav sections={sections} activeKey={active} onSelect={setActive} />
@@ -28,6 +51,7 @@ const Policy = () => {
         {active === 'policy-sets' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Authentication & Authorization Policy Sets</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a policy set to view authentication and authorization rules</div>
             <Table headers={['#', 'Policy Set Name', 'Status', 'Conditions', 'Authentication Policy', 'Authorization Policy', 'Matched']}
               rows={policySets.map(p => [
                 <span className="font-mono" style={{ color: '#999' }}>{p.id}</span>,
@@ -36,7 +60,10 @@ const Policy = () => {
                 <span className="font-mono" style={{ color: '#666' }}>{p.conditions}</span>,
                 p.authPolicy, p.authzPolicy,
                 <span className="text-right font-mono">{p.hits.toLocaleString()}</span>,
-              ])} />
+              ])}
+              onRowClick={(i) => { setSelectedPolicySet(policySets[i]); setPolicySetOpen(true); }}
+            />
+            <PolicySetDetailDialog policySet={selectedPolicySet} open={policySetOpen} onOpenChange={setPolicySetOpen} />
           </>
         )}
 
@@ -71,6 +98,7 @@ const Policy = () => {
         {active === 'authz-profiles' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Authorization Profiles</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a profile to view Common Tasks and RADIUS attributes</div>
             <Table headers={['Name', 'Type', 'Description', 'Access Type', 'VLAN', 'DACL']}
               rows={authorizationProfiles.map(p => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
@@ -78,13 +106,17 @@ const Policy = () => {
                 <span className="font-mono">{p.accessType}</span>,
                 <span className="font-mono" style={{ color: '#888' }}>{p.vlan || '—'}</span>,
                 <span className="font-mono text-[11px]" style={{ color: '#888' }}>{p.dacl || '—'}</span>,
-              ])} />
+              ])}
+              onRowClick={(i) => { setSelectedProfile(authorizationProfiles[i]); setProfileOpen(true); }}
+            />
+            <AuthzProfileDetailDialog profile={selectedProfile} open={profileOpen} onOpenChange={setProfileOpen} />
           </>
         )}
 
         {active === 'conditions' && (
           <>
             <div className="flex items-center gap-2 mb-2"><FileText size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Policy Conditions Library</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a condition to open the Condition Studio editor</div>
             <Table headers={['Name', 'Type', 'Attribute', 'Operator', 'Value', 'Description']}
               rows={policyConditions.map(c => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{c.name}</span>,
@@ -93,7 +125,10 @@ const Policy = () => {
                 c.operator,
                 <span className="font-mono">{c.value}</span>,
                 <span style={{ color: '#666' }}>{c.description}</span>,
-              ])} />
+              ])}
+              onRowClick={(i) => { setSelectedCondition(policyConditions[i]); setConditionOpen(true); }}
+            />
+            <ConditionStudioDialog condition={selectedCondition} open={conditionOpen} onOpenChange={setConditionOpen} />
           </>
         )}
 
@@ -113,6 +148,7 @@ const Policy = () => {
         {active === 'profiling' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Cpu size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Profiling Policies</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a policy to view certainty factor conditions</div>
             <Table headers={['Policy Name', 'Min Certainty', 'Matched Endpoints', 'Conditions', 'Parent', 'Status']}
               rows={profilingPolicies.map(p => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
@@ -121,13 +157,17 @@ const Policy = () => {
                 <span className="font-mono text-[11px]" style={{ color: '#666' }}>{p.conditions}</span>,
                 p.parentPolicy || '—',
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: p.status === 'Verified' ? '#6cc04a20' : '#fbab1830', color: p.status === 'Verified' ? '#3d7a2a' : '#b47a00' }}>{p.status}</span>,
-              ])} />
+              ])}
+              onRowClick={(i) => { setSelectedProfilingPolicy(profilingPolicies[i]); setProfilingOpen(true); }}
+            />
+            <ProfilingPolicyDetailDialog policy={selectedProfilingPolicy} open={profilingOpen} onOpenChange={setProfilingOpen} />
           </>
         )}
 
         {active === 'client-provisioning' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Download size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Client Provisioning Resources</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a resource to view provisioning rule details</div>
             <Table headers={['Name', 'Platform', 'Type', 'Version', 'Status', 'Last Updated']}
               rows={clientProvisioningResources.map(r => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{r.name}</span>,
@@ -135,7 +175,46 @@ const Policy = () => {
                 <span className="font-mono">{r.version}</span>,
                 <StatusBadge ok={r.status === 'Active'} label={r.status} />,
                 <span style={{ color: '#888' }}>{r.lastUpdated}</span>,
-              ])} />
+              ])}
+              onRowClick={(i) => { setSelectedCPResource(clientProvisioningResources[i]); setCpResourceOpen(true); }}
+            />
+            {/* Client Provisioning Detail Dialog */}
+            <Dialog open={cpResourceOpen} onOpenChange={setCpResourceOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="text-sm">
+                    <span style={{ color: '#049fd9' }}>Client Provisioning:</span> {selectedCPResource?.name}
+                  </DialogTitle>
+                </DialogHeader>
+                {selectedCPResource && (() => {
+                  const d = clientProvisioningRuleDetails[selectedCPResource.name];
+                  return (
+                    <div className="border border-border rounded p-3 bg-card text-xs space-y-2">
+                      <div className="flex items-center"><span className="w-40 font-medium shrink-0" style={{ color: '#555' }}>Name</span><span>{selectedCPResource.name}</span></div>
+                      <div className="flex items-center"><span className="w-40 font-medium shrink-0" style={{ color: '#555' }}>Platform</span><span>{selectedCPResource.platform}</span></div>
+                      <div className="flex items-center"><span className="w-40 font-medium shrink-0" style={{ color: '#555' }}>Type</span><span>{selectedCPResource.type}</span></div>
+                      <div className="flex items-center"><span className="w-40 font-medium shrink-0" style={{ color: '#555' }}>Version</span><span className="font-mono">{selectedCPResource.version}</span></div>
+                      {d && (
+                        <>
+                          <div className="border-t border-border pt-2 mt-2" />
+                          <div className="flex items-center"><span className="w-40 font-medium shrink-0" style={{ color: '#555' }}>Description</span><span>{d.description}</span></div>
+                          <div className="flex items-start"><span className="w-40 font-medium shrink-0" style={{ color: '#555' }}>OS Conditions</span>
+                            <div className="flex flex-wrap gap-1">{d.osConditions.map(os => <span key={os} className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: '#049fd920', color: '#049fd9' }}>{os}</span>)}</div>
+                          </div>
+                          <div className="flex items-center"><span className="w-40 font-medium shrink-0" style={{ color: '#555' }}>Agent Package</span><span className="font-mono text-[10px]">{d.agentPackage}</span></div>
+                          <div className="flex items-center"><span className="w-40 font-medium shrink-0" style={{ color: '#555' }}>Profile</span><span className="font-mono">{d.profile}</span></div>
+                          <div className="flex items-center"><span className="w-40 font-medium shrink-0" style={{ color: '#555' }}>Compliance Module</span><span className="font-mono text-[10px]">{d.complianceModule}</span></div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setCpResourceOpen(false)}>Close</Button>
+                  <Button size="sm" style={{ background: '#049fd9' }} onClick={() => setCpResourceOpen(false)}>Save</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         )}
       </div>
@@ -150,7 +229,7 @@ const StatusBadge = ({ ok, label }: { ok: boolean; label: string }) => (
   </span>
 );
 
-const Table = ({ headers, rows }: { headers: string[]; rows: React.ReactNode[][] }) => (
+const Table = ({ headers, rows, onRowClick }: { headers: string[]; rows: React.ReactNode[][]; onRowClick?: (i: number) => void }) => (
   <div className="border border-border rounded overflow-auto bg-card">
     <table className="w-full text-xs">
       <thead>
@@ -160,7 +239,7 @@ const Table = ({ headers, rows }: { headers: string[]; rows: React.ReactNode[][]
       </thead>
       <tbody>
         {rows.map((row, i) => (
-          <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className="hover:bg-accent/60">
+          <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className={`hover:bg-accent/60 ${onRowClick ? 'cursor-pointer' : ''}`} onClick={() => onRowClick?.(i)}>
             {row.map((cell, j) => <td key={j} className="p-2">{cell}</td>)}
           </tr>
         ))}
