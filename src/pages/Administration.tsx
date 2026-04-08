@@ -63,6 +63,7 @@ type CertTab = 'system' | 'trusted' | 'ca' | 'csr';
 type SettingsTab = 'general' | 'eap-tls' | 'radius' | 'profiler' | 'posture' | 'pxgrid' | 'logging';
 
 const Administration = () => {
+  const sim = useSimulation();
   const [active, setActive] = useState('deployment');
   const [selectedNode, setSelectedNode] = useState<typeof deploymentNodes[0] | null>(null);
   const [nodeDialogOpen, setNodeDialogOpen] = useState(false);
