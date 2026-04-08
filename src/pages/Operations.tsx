@@ -305,7 +305,7 @@ const Operations = () => {
           <div className="border border-border rounded overflow-auto bg-card">
             <table className="w-full text-xs">
               <thead><tr style={{ background: '#f0f0f0' }}>{['MAC Address', 'IP Address', 'ANC Policy', 'Status', 'Applied By', 'Applied At', 'Reason'].map(h => <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>)}</tr></thead>
-              <tbody>{localAnc.map((a, i) => (
+              <tbody>{sim.ancEndpoints.map((a, i) => (
                 <tr key={a.id} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className="hover:bg-accent/60">
                   <td className="p-2 font-mono" style={{ color: '#049fd9' }}>{a.mac}</td>
                   <td className="p-2 font-mono">{a.ip}</td>
@@ -326,7 +326,7 @@ const Operations = () => {
                 <div><label className="block mb-1" style={{ color: '#555' }}>ANC Policy</label><select className="w-full border border-border rounded px-2 py-1 text-xs bg-card" value={ancPolicy} onChange={e => setAncPolicy(e.target.value)}><option>ANC-Quarantine</option><option>ANC-Shutdown</option><option>ANC-PortBounce</option></select></div>
               </div>
               <div className="flex gap-2">
-                <button className="text-xs px-3 py-1 rounded text-white" style={{ background: '#049fd9' }} onClick={() => { if (ancMac) { setLocalAnc(prev => [...prev, { id: prev.length + 1, mac: ancMac, ip: '10.1.50.999', policy: ancPolicy, status: ancPolicy === 'ANC-Shutdown' ? 'Port Shutdown' : 'Quarantined', appliedBy: 'admin', appliedAt: new Date().toLocaleString(), reason: 'Manually applied' }]); setAncMac(''); setAncApplyOpen(false); } }}>Apply</button>
+                <button className="text-xs px-3 py-1 rounded text-white" style={{ background: '#049fd9' }} onClick={() => { if (ancMac) { sim.addANCEndpoint({ mac: ancMac, ip: '10.1.50.' + Math.floor(Math.random()*254+1), policy: ancPolicy, status: ancPolicy === 'ANC-Shutdown' ? 'Port Shutdown' : 'Quarantined', appliedBy: 'admin', appliedAt: new Date().toLocaleString(), reason: 'Manually applied' } as any); setAncMac(''); setAncApplyOpen(false); } }}>Apply</button>
                 <button className="text-xs px-3 py-1 rounded border border-border" onClick={() => setAncApplyOpen(false)}>Cancel</button>
               </div>
             </div>
