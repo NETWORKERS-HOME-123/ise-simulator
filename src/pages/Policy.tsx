@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ISELeftNav, { NavSection } from "@/components/ISELeftNav";
-import { policySets, authenticationPolicies, authorizationPolicies, authorizationProfiles, policyConditions, radiusDictionaries, profilingPolicies, clientProvisioningResources } from "@/lib/mockData";
+import { policySets, authorizationProfiles, policyConditions, radiusDictionaries, profilingPolicies, clientProvisioningResources } from "@/lib/mockData";
 import { clientProvisioningRuleDetails } from "@/lib/mockDataExtended";
 import { downloadableACLs, allowedProtocolsServices } from "@/lib/mockDataGap";
 import { Shield, CheckCircle, XCircle, FileText, Layers, BookOpen, Cpu, Download, Lock, ListChecks, Clock } from "lucide-react";
@@ -15,17 +15,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 
 const sections: NavSection[] = [
-  { label: 'Policy', items: [{ label: 'Policy Sets', key: 'policy-sets' }], defaultOpen: true },
-  { label: 'Authentication', items: [{ label: 'Authentication Policies', key: 'auth-policies' }], defaultOpen: true },
-  { label: 'Authorization', items: [{ label: 'Authorization Policies', key: 'authz-policies' }], defaultOpen: true },
+  { label: 'Policy Sets', items: [{ label: 'Policy Sets', key: 'policy-sets' }], defaultOpen: true },
   { label: 'Policy Elements', items: [
+    { label: 'Results', key: 'results-header' },
+  ], defaultOpen: true },
+  { label: 'Results > Authorization', items: [
     { label: 'Authorization Profiles', key: 'authz-profiles' },
     { label: 'Downloadable ACLs', key: 'dacls' },
+  ], defaultOpen: true },
+  { label: 'Results > Authentication', items: [
     { label: 'Allowed Protocols', key: 'allowed-protocols' },
-    { label: 'Conditions', key: 'conditions' },
-    { label: 'Dictionaries', key: 'dictionaries' },
-    { label: 'Policy Exceptions', key: 'policy-exceptions' },
-    { label: 'Time/Date Conditions', key: 'time-conditions' },
+  ], defaultOpen: true },
+  { label: 'Conditions', items: [
+    { label: 'Library Conditions', key: 'conditions' },
+    { label: 'Time & Date Conditions', key: 'time-conditions' },
+  ], defaultOpen: false },
+  { label: 'Dictionaries', items: [
+    { label: 'System', key: 'dict-system' },
+    { label: 'User', key: 'dict-user' },
+    { label: 'RADIUS Vendor', key: 'dictionaries' },
   ], defaultOpen: false },
   { label: 'Profiling', items: [{ label: 'Profiling Policies', key: 'profiling' }], defaultOpen: false },
   { label: 'Client Provisioning', items: [{ label: 'Resources', key: 'client-provisioning' }], defaultOpen: false },
@@ -56,15 +64,15 @@ const Policy = () => {
 
         {active === 'policy-sets' && (
           <>
-            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Authentication & Authorization Policy Sets</span></div>
-            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a policy set to view authentication and authorization rules</div>
-            <Table headers={['#', 'Policy Set Name', 'Status', 'Conditions', 'Authentication Policy', 'Authorization Policy', 'Matched']}
+            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Policy Sets</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a policy set to view embedded Authentication and Authorization rules. In real ISE, auth/authz rules are inside each policy set.</div>
+            <Table headers={['#', 'Status', 'Policy Set Name', 'Conditions', 'Allowed Protocols', 'Hits']}
               rows={policySets.map(p => [
                 <span className="font-mono" style={{ color: '#999' }}>{p.id}</span>,
+                p.status === 'Enabled' ? <StatusBadge ok label="Enabled" /> : p.status === 'Monitor' ? <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#fbab18' }} /> Monitor</span> : <StatusBadge ok={false} label="Disabled" />,
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
-                p.status === 'Enabled' ? <StatusBadge ok label="Enabled" /> : <StatusBadge ok={false} label="Disabled" />,
                 <span className="font-mono" style={{ color: '#666' }}>{p.conditions}</span>,
-                p.authPolicy, p.authzPolicy,
+                <span className="text-[11px]">{p.authPolicy}</span>,
                 <span className="text-right font-mono">{p.hits.toLocaleString()}</span>,
               ])}
               onRowClick={(i) => { setSelectedPolicySet(policySets[i]); setPolicySetOpen(true); }}
@@ -73,38 +81,22 @@ const Policy = () => {
           </>
         )}
 
-        {active === 'auth-policies' && (
-          <>
-            <div className="flex items-center gap-2 mb-2"><FileText size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Authentication Policies</span></div>
-            <Table headers={['#', 'Rule Name', 'Status', 'Conditions', 'Allowed Protocols', 'Identity Store']}
-              rows={authenticationPolicies.map(p => [
-                <span className="font-mono" style={{ color: '#999' }}>{p.id}</span>,
-                <span className="font-semibold" style={{ color: '#049fd9' }}>{p.rule}</span>,
-                <StatusBadge ok={p.status === 'Enabled'} label={p.status} />,
-                <span className="font-mono" style={{ color: '#666' }}>{p.conditions}</span>,
-                p.allowedProtocols, p.identityStore,
-              ])} />
-          </>
-        )}
-
-        {active === 'authz-policies' && (
-          <>
-            <div className="flex items-center gap-2 mb-2"><Layers size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Authorization Policies</span></div>
-            <Table headers={['#', 'Rule Name', 'Status', 'Conditions', 'Authorization Profile', 'Security Group']}
-              rows={authorizationPolicies.map(p => [
-                <span className="font-mono" style={{ color: '#999' }}>{p.id}</span>,
-                <span className="font-semibold" style={{ color: '#049fd9' }}>{p.rule}</span>,
-                <StatusBadge ok={p.status === 'Enabled'} label={p.status} />,
-                <span className="font-mono text-[11px]" style={{ color: '#666' }}>{p.conditions}</span>,
-                p.profile, p.securityGroup,
-              ])} />
-          </>
+        {active === 'results-header' && (
+          <div className="text-xs p-4 border border-border rounded bg-card" style={{ color: '#666' }}>
+            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Policy Elements — Results</span></div>
+            <p>Results define the outcomes applied when a policy rule matches. Use the left navigation to access:</p>
+            <ul className="list-disc ml-4 mt-2 space-y-1">
+              <li><strong>Authorization Profiles</strong> — RADIUS attributes returned on Access-Accept (VLAN, DACL, Web Redirect, etc.)</li>
+              <li><strong>Downloadable ACLs</strong> — ACE rules pushed to the network device per session</li>
+              <li><strong>Allowed Protocols</strong> — EAP methods permitted for authentication</li>
+            </ul>
+          </div>
         )}
 
         {active === 'authz-profiles' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Authorization Profiles</span></div>
-            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a profile to view Common Tasks and RADIUS attributes</div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Results &gt; Authorization &gt; Authorization Profiles. Click a profile to view Common Tasks and RADIUS attributes.</div>
             <Table headers={['Name', 'Type', 'Description', 'Access Type', 'VLAN', 'DACL']}
               rows={authorizationProfiles.map(p => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
@@ -122,10 +114,11 @@ const Policy = () => {
         {active === 'dacls' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Downloadable ACLs (DACLs)</span></div>
-            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a DACL to edit Access Control Entries</div>
-            <Table headers={['DACL Name', 'Description', 'ACE Lines']}
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Results &gt; Authorization &gt; Downloadable ACLs. Click a DACL to edit Access Control Entries.</div>
+            <Table headers={['DACL Name', 'IP Version', 'Description', 'ACE Lines']}
               rows={downloadableACLs.map(d => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{d.name}</span>,
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#049fd920', color: '#049fd9' }}>{(d as any).ipVersion || 'IPv4'}</span>,
                 <span style={{ color: '#666' }}>{d.description}</span>,
                 <span className="font-mono">{d.content.split('\n').length}</span>,
               ])}
@@ -138,7 +131,7 @@ const Policy = () => {
         {active === 'allowed-protocols' && (
           <>
             <div className="flex items-center gap-2 mb-2"><ListChecks size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Allowed Protocols Services</span></div>
-            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a service to toggle EAP protocol types</div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Results &gt; Authentication &gt; Allowed Protocols. Click a service to toggle EAP protocol types.</div>
             <Table headers={['Service Name', 'Description', 'Enabled Protocols']}
               rows={allowedProtocolsServices.map(s => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{s.name}</span>,
@@ -153,8 +146,8 @@ const Policy = () => {
 
         {active === 'conditions' && (
           <>
-            <div className="flex items-center gap-2 mb-2"><FileText size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Policy Conditions Library</span></div>
-            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a condition to open the Condition Studio editor</div>
+            <div className="flex items-center gap-2 mb-2"><FileText size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Library Conditions</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Conditions &gt; Library Conditions. Click a condition to open the Condition Studio editor.</div>
             <Table headers={['Name', 'Type', 'Attribute', 'Operator', 'Value', 'Description']}
               rows={policyConditions.map(c => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{c.name}</span>,
@@ -170,44 +163,10 @@ const Policy = () => {
           </>
         )}
 
-        {active === 'dictionaries' && (
-          <>
-            <div className="flex items-center gap-2 mb-2"><BookOpen size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>RADIUS Dictionaries</span></div>
-            <Table headers={['Dictionary Name', 'Vendor', 'Attributes', 'Description']}
-              rows={radiusDictionaries.map(d => [
-                <span className="font-semibold" style={{ color: '#049fd9' }}>{d.name}</span>,
-                d.vendor,
-                <span className="font-mono">{d.attributes}</span>,
-                <span style={{ color: '#666' }}>{d.description}</span>,
-              ])} />
-          </>
-        )}
-
-        {active === 'policy-exceptions' && (
-          <>
-            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Policy Exceptions</span></div>
-            <div className="text-xs mb-2" style={{ color: '#666' }}>Local and global exception rules that override standard authorization policies</div>
-            <div className="text-xs font-semibold mb-1" style={{ color: '#333' }}>Global Exceptions</div>
-            <Table headers={['#', 'Rule Name', 'Status', 'Conditions', 'Profile', 'Security Group']}
-              rows={[
-                ['1', 'Blacklisted_Devices', 'Enabled', 'EndPoints:BYODRegistration EQUALS Lost/Stolen', 'Blackhole_Stolen', 'Quarantine'],
-                ['2', 'Posture_NonCompliant', 'Enabled', 'Session:PostureStatus EQUALS NonCompliant', 'Posture_Remediation', 'Quarantine'],
-                ['3', 'ANC_Quarantined', 'Enabled', 'ANCPolicy EQUALS ANC-Quarantine', 'DenyAccess', 'Quarantine'],
-              ].map(r => [
-                <span className="font-mono" style={{ color: '#999' }}>{r[0]}</span>,
-                <span className="font-semibold" style={{ color: '#049fd9' }}>{r[1]}</span>,
-                <StatusBadge ok label={r[2]} />,
-                <span className="font-mono text-[11px]" style={{ color: '#666' }}>{r[3]}</span>,
-                r[4], r[5],
-              ])} />
-            <div className="text-xs font-semibold mb-1 mt-3" style={{ color: '#333' }}>Local Exceptions (per Policy Set)</div>
-            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#888' }}>Local exceptions are configured within each Policy Set. Click on a policy set to manage local exceptions.</div>
-          </>
-        )}
-
         {active === 'time-conditions' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Clock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Time and Date Conditions</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Conditions &gt; Time &amp; Date Conditions</div>
             <Table headers={['Condition Name', 'Days', 'Start Time', 'End Time', 'Description']}
               rows={[
                 ['Business_Hours', 'Mon-Fri', '08:00', '18:00', 'Standard business hours access window'],
@@ -220,6 +179,47 @@ const Policy = () => {
                 <span className="font-mono">{r[2]}</span>,
                 <span className="font-mono">{r[3]}</span>,
                 <span style={{ color: '#666' }}>{r[4]}</span>,
+              ])} />
+          </>
+        )}
+
+        {(active === 'dict-system' || active === 'dict-user') && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><BookOpen size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>{active === 'dict-system' ? 'System Dictionaries' : 'User Dictionaries'}</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Dictionaries &gt; {active === 'dict-system' ? 'System' : 'User'}</div>
+            {active === 'dict-system' ? (
+              <Table headers={['Dictionary Name', 'Attributes', 'Description']}
+                rows={[
+                  ['DEVICE', '12', 'Network device attributes (Type, Location, Model, Software Version)'],
+                  ['Network Access', '15', 'Network access session attributes (EapAuthentication, Protocol, etc.)'],
+                  ['RADIUS', '256', 'Standard IETF RADIUS attributes (RFC 2865/2866)'],
+                  ['EndPoints', '8', 'Endpoint attributes from profiling (BYODRegistration, OUI, etc.)'],
+                  ['Session', '10', 'Session state attributes (PostureStatus, ServiceType)'],
+                  ['IdentityGroup', '3', 'Identity group membership conditions'],
+                ].map(r => [
+                  <span className="font-semibold" style={{ color: '#049fd9' }}>{r[0]}</span>,
+                  <span className="font-mono">{r[1]}</span>,
+                  <span style={{ color: '#666' }}>{r[2]}</span>,
+                ])} />
+            ) : (
+              <div className="text-xs p-4 border border-border rounded bg-card" style={{ color: '#888' }}>
+                No user-defined dictionaries configured. Click "Add" to create a custom dictionary with custom attributes.
+                <div className="mt-3"><button className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => toast.info("Add User Dictionary dialog — coming soon")}>+ Add Dictionary</button></div>
+              </div>
+            )}
+          </>
+        )}
+
+        {active === 'dictionaries' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><BookOpen size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>RADIUS Vendor Dictionaries</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Dictionaries &gt; RADIUS Vendor</div>
+            <Table headers={['Dictionary Name', 'Vendor', 'Attributes', 'Description']}
+              rows={radiusDictionaries.map(d => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{d.name}</span>,
+                d.vendor,
+                <span className="font-mono">{d.attributes}</span>,
+                <span style={{ color: '#666' }}>{d.description}</span>,
               ])} />
           </>
         )}

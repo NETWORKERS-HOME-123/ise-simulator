@@ -19,10 +19,31 @@ const sections: NavSection[] = [
     { label: 'Deployment', key: 'deployment' },
     { label: 'Licensing', key: 'licensing' },
     { label: 'Certificates', key: 'certificates' },
-    { label: 'Backup & Restore', key: 'backup-restore' },
-    { label: 'Patch Management', key: 'patch-mgmt' },
-    { label: 'Settings', key: 'settings' },
+    { label: 'Logging', key: 'logging' },
+    { label: 'Maintenance', key: 'maintenance-header' },
   ], defaultOpen: true },
+  { label: 'Maintenance', items: [
+    { label: 'Backup & Restore', key: 'backup-restore' },
+    { label: 'Repository', key: 'repository' },
+    { label: 'Patch Management', key: 'patch-mgmt' },
+  ], defaultOpen: false },
+  { label: 'Settings', items: [
+    { label: 'General', key: 'settings' },
+    { label: 'SMTP Server', key: 'smtp' },
+    { label: 'Proxy', key: 'proxy' },
+  ], defaultOpen: false },
+  { label: 'Admin Access', items: [
+    { label: 'Administrators', key: 'admin-users' },
+    { label: 'Admin Groups', key: 'admin-groups' },
+    { label: 'Authentication', key: 'admin-auth' },
+    { label: 'Authorization', key: 'admin-authz' },
+  ], defaultOpen: false },
+  { label: 'Identity Management', items: [
+    { label: 'Identity Source Sequences', key: 'id-sequences' },
+    { label: 'Internal Users', key: 'internal-users' },
+    { label: 'External Identity Sources', key: 'ext-identity' },
+    { label: 'Identity Groups', key: 'identity-groups' },
+  ], defaultOpen: false },
   { label: 'Network Resources', items: [
     { label: 'Network Devices', key: 'network-devices' },
     { label: 'Network Device Groups', key: 'ndg' },
@@ -30,21 +51,10 @@ const sections: NavSection[] = [
     { label: 'External RADIUS Servers', key: 'ext-radius' },
     { label: 'RADIUS Server Sequences', key: 'radius-sequences' },
   ], defaultOpen: false },
-  { label: 'Identity Management', items: [
-    { label: 'Internal Users', key: 'internal-users' },
-    { label: 'Identity Groups', key: 'identity-groups' },
-    { label: 'External Identity Sources', key: 'ext-identity' },
-    { label: 'Identity Source Sequences', key: 'id-sequences' },
-  ], defaultOpen: false },
-  { label: 'Admin Access', items: [
-    { label: 'Admin Users', key: 'admin-users' },
-    { label: 'Admin Groups', key: 'admin-groups' },
-  ], defaultOpen: false },
   { label: 'System Configuration', items: [
-    { label: 'SMTP Server', key: 'smtp' },
-    { label: 'NTP Servers', key: 'ntp' },
     { label: 'ERS (API Gateway)', key: 'ers' },
     { label: 'Data Connect', key: 'data-connect' },
+    { label: 'NTP Servers', key: 'ntp' },
   ], defaultOpen: false },
 ];
 
@@ -112,8 +122,8 @@ const Administration = () => {
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div><span style={{ color: '#888' }}>Deployment Type:</span> <span className="font-mono">Distributed</span></div>
                 <div><span style={{ color: '#888' }}>Primary PAN:</span> <span className="font-mono">ise-pan01.corp.local</span></div>
-                <div><span style={{ color: '#888' }}>ISE Version:</span> <span className="font-mono">3.1.0.518</span></div>
-                <div><span style={{ color: '#888' }}>Patch Level:</span> <span className="font-mono">Patch 7</span></div>
+                <div><span style={{ color: '#888' }}>ISE Version:</span> <span className="font-mono">3.3.0.430</span></div>
+                <div><span style={{ color: '#888' }}>Patch Level:</span> <span className="font-mono">Patch 3</span></div>
                 <div><span style={{ color: '#888' }}>PAN Failover:</span> <span className="font-mono">{panFailover ? 'Active' : 'Standby'}</span></div>
               </div>
             </div>
@@ -242,8 +252,66 @@ const Administration = () => {
           </>
         )}
 
+        {/* ============= LOGGING ============= */}
+        {active === 'logging' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2"><Settings size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Logging Configuration</span></div>
+            <div className="border border-border rounded bg-card p-4 text-xs">
+              <div className="font-semibold mb-2" style={{ color: '#333' }}>Logging Targets</div>
+              <ISETable headers={['Name', 'Type', 'Severity', 'Status']}
+                rows={systemSettings.logging.targets.map(t => [
+                  <span className="font-semibold" style={{ color: '#049fd9' }}>{t.name}</span>, t.type,
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: t.severity === 'ERROR' ? '#cc000020' : t.severity === 'WARN' ? '#fbab1830' : '#049fd920', color: t.severity === 'ERROR' ? '#cc0000' : t.severity === 'WARN' ? '#b47a00' : '#049fd9' }}>{t.severity}</span>,
+                  t.status,
+                ])} />
+            </div>
+            <div className="border border-border rounded bg-card p-4 text-xs">
+              <div className="font-semibold mb-2" style={{ color: '#333' }}>Collection Filters</div>
+              <div className="space-y-2">{systemSettings.logging.collectionFilters.map(f => (
+                <div key={f.name} className="flex items-center gap-2"><Switch defaultChecked={f.enabled} className="scale-75" /><span style={{ color: '#333' }}>{f.name}</span></div>
+              ))}</div>
+            </div>
+          </div>
+        )}
+
+        {/* ============= MAINTENANCE HEADER ============= */}
+        {active === 'maintenance-header' && (
+          <div className="text-xs p-4 border border-border rounded bg-card" style={{ color: '#666' }}>
+            <div className="flex items-center gap-2 mb-2"><Wrench size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Maintenance</span></div>
+            <p>Manage ISE system backups, patch installations, and repository configurations. Use the left navigation to access:</p>
+            <ul className="list-disc ml-4 mt-2 space-y-1">
+              <li><strong>Backup & Restore</strong> — Schedule and manage configuration/operational backups</li>
+              <li><strong>Repository</strong> — Configure SFTP/FTP/NFS backup repositories</li>
+              <li><strong>Patch Management</strong> — View installed patches and apply updates</li>
+            </ul>
+          </div>
+        )}
+
         {/* ============= BACKUP & RESTORE ============= */}
         {active === 'backup-restore' && <BackupRestorePanel />}
+
+        {/* ============= REPOSITORY ============= */}
+        {active === 'repository' && (
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2"><HardDrive size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Repository</span></div>
+              <button className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>+ Add Repository</button>
+            </div>
+            <ISETable headers={['Repository Name', 'Type', 'Server', 'Path', 'Status']}
+              rows={[
+                ['SFTP-Backup-01', 'SFTP', 'sftp-backup.corp.local', '/backups/ise/', 'Available'],
+                ['NFS-Archive', 'NFS', 'nfs.corp.local', '/mnt/nfs/ise-archive/', 'Unavailable'],
+                ['FTP-DR', 'FTP', 'ftp-dr.corp.local', '/dr/ise/', 'Available'],
+                ['Local-Storage', 'Local', 'ise-pan01', '/opt/backup/', 'Available'],
+              ].map(r => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{r[0]}</span>,
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#049fd920', color: '#049fd9' }}>{r[1]}</span>,
+                <span className="font-mono text-[11px]">{r[2]}</span>,
+                <span className="font-mono text-[11px]">{r[3]}</span>,
+                <span className="flex items-center gap-1">{r[4] === 'Available' ? <CheckCircle size={12} style={{ color: '#6cc04a' }} /> : <XCircle size={12} style={{ color: '#cc0000' }} />} {r[4]}</span>,
+              ])} />
+          </>
+        )}
 
         {/* ============= PATCH MANAGEMENT ============= */}
         {active === 'patch-mgmt' && (
@@ -268,7 +336,7 @@ const Administration = () => {
           <>
             <div className="flex items-center gap-2 mb-2"><Settings size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>System Settings</span></div>
             <div className="flex items-center border-b border-border mb-3">
-              {([['general', 'General'], ['eap-tls', 'EAP-TLS'], ['radius', 'RADIUS'], ['profiler', 'Profiler'], ['posture', 'Posture'], ['pxgrid', 'pxGrid'], ['logging', 'Logging']] as const).map(([key, label]) => (
+              {([['general', 'General'], ['eap-tls', 'EAP-TLS'], ['radius', 'RADIUS'], ['profiler', 'Profiler'], ['posture', 'Posture'], ['pxgrid', 'pxGrid']] as const).map(([key, label]) => (
                 <button key={key} className="px-3 py-1.5 text-xs font-medium border-b-2 transition-colors" style={{ color: settingsTab === key ? '#049fd9' : '#666', borderBottomColor: settingsTab === key ? '#049fd9' : 'transparent' }} onClick={() => setSettingsTab(key)}>{label}</button>
               ))}
             </div>
@@ -331,27 +399,52 @@ const Administration = () => {
                 <SettingSwitchRow label="Password-Based" checked={systemSettings.pxGrid.passwordBased} />
               </div>
             )}
-            {settingsTab === 'logging' && (
-              <div className="space-y-3">
-                <div className="border border-border rounded bg-card p-4 text-xs">
-                  <div className="font-semibold mb-2" style={{ color: '#333' }}>Logging Targets</div>
-                  <ISETable headers={['Name', 'Type', 'Severity', 'Status']}
-                    rows={systemSettings.logging.targets.map(t => [
-                      <span className="font-semibold" style={{ color: '#049fd9' }}>{t.name}</span>, t.type,
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: t.severity === 'ERROR' ? '#cc000020' : t.severity === 'WARN' ? '#fbab1830' : '#049fd920', color: t.severity === 'ERROR' ? '#cc0000' : t.severity === 'WARN' ? '#b47a00' : '#049fd9' }}>{t.severity}</span>,
-                      t.status,
-                    ])} />
-                </div>
-                <div className="border border-border rounded bg-card p-4 text-xs">
-                  <div className="font-semibold mb-2" style={{ color: '#333' }}>Collection Filters</div>
-                  <div className="space-y-2">{systemSettings.logging.collectionFilters.map(f => (
-                    <div key={f.name} className="flex items-center gap-2"><Switch defaultChecked={f.enabled} className="scale-75" /><span style={{ color: '#333' }}>{f.name}</span></div>
-                  ))}</div>
-                </div>
-              </div>
-            )}
             <div className="flex justify-end mt-3"><Button size="sm" style={{ background: '#049fd9' }} onClick={() => toast.success("System settings saved successfully")}>Save Settings</Button></div>
           </>
+        )}
+
+        {/* ============= PROXY ============= */}
+        {active === 'proxy' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2"><Globe size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Proxy Settings</span></div>
+            <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
+              {[['Proxy Enabled', 'No'], ['Proxy Server', '—'], ['Proxy Port', '—'], ['Bypass Proxy For', 'localhost, 127.0.0.1']].map(([l, v]) => (
+                <div key={l} className="flex items-center"><span className="w-40 font-medium" style={{ color: '#555' }}>{l}</span><span className="font-mono" style={{ color: '#333' }}>{v}</span></div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ============= ADMIN AUTH / AUTHZ ============= */}
+        {active === 'admin-auth' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Admin Authentication Method</span></div>
+            <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
+              {[['Authentication Method', 'Password Based'], ['Password Policy', 'Alphanumeric, min 8 chars, 1 uppercase, 1 digit'], ['Account Lockout', 'After 5 failed attempts'], ['Lockout Duration', '30 minutes'], ['Session Timeout', '60 minutes'], ['Idle Timeout', '30 minutes']].map(([l, v]) => (
+                <div key={l} className="flex items-center"><span className="w-52 font-medium" style={{ color: '#555' }}>{l}</span><span className="font-mono" style={{ color: '#333' }}>{v}</span></div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {active === 'admin-authz' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Admin Authorization — RBAC Permissions</span></div>
+            <ISETable headers={['Admin Group', 'Menu Access', 'Data Access']}
+              rows={[
+                ['Super Admin', 'Full Menu Access', 'Full Data Access'],
+                ['Network Device Admin', 'Network Resources, Policy', 'Network Devices, Policies'],
+                ['Help Desk Admin', 'Operations, Context Visibility', 'Read-Only Logs, Endpoints'],
+                ['Read Only Admin', 'All Menus (Read Only)', 'All Data (Read Only)'],
+                ['System Admin', 'Administration > System', 'System Settings, Maintenance'],
+                ['Policy Admin', 'Policy, Work Centers', 'Policies, Conditions, Results'],
+                ['MnT Admin', 'Operations, Reports', 'Logs, Reports, Alarms'],
+              ].map(r => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{r[0]}</span>,
+                <span style={{ color: '#666' }}>{r[1]}</span>,
+                <span style={{ color: '#666' }}>{r[2]}</span>,
+              ])} />
+          </div>
         )}
 
         {/* ============= NETWORK DEVICES ============= */}
@@ -378,13 +471,18 @@ const Administration = () => {
               <DialogContent className="max-w-lg">
                 <DialogHeader><DialogTitle className="text-sm">Add Network Device</DialogTitle></DialogHeader>
                 <div className="space-y-3 text-xs">
-                  {[['Device Name', 'text'], ['IP Address', 'text'], ['RADIUS Shared Secret', 'password']].map(([label, type]) => (
+                  {[['Device Name', 'text'], ['IP Address / IP Range', 'text'], ['RADIUS Shared Secret', 'password']].map(([label, type]) => (
                     <div key={label}><label className="block mb-1 font-medium" style={{ color: '#555' }}>{label}</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type={type} /></div>
                   ))}
                   <div className="grid grid-cols-2 gap-3">
-                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Type</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Switch</option><option>Wireless Controller</option><option>Firewall</option><option>VPN</option><option>Router</option></select></div>
-                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Location</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Building A</option><option>Building B</option><option>Data Center</option><option>DMZ</option></select></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Profile</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Cisco</option><option>Aruba</option><option>HP</option><option>Juniper</option><option>Meraki</option></select></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Model Name</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" placeholder="e.g. Catalyst 9300" /></div>
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Type (NDG)</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Switch</option><option>Wireless Controller</option><option>Firewall</option><option>VPN</option><option>Router</option><option>Access Point</option></select></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Location (NDG)</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Building A</option><option>Building B</option><option>Data Center</option><option>DMZ</option><option>Remote</option></select></div>
+                  </div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Software Version</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" placeholder="e.g. 17.9.1" /></div>
                 </div>
                 <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDeviceOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => { toast.success("Network device added successfully"); setAddDeviceOpen(false); }}>Save</Button></DialogFooter>
               </DialogContent>
@@ -404,7 +502,6 @@ const Administration = () => {
           </>
         )}
 
-        {/* ============= NETWORK DEVICE PROFILES ============= */}
         {active === 'ndp' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Router size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Device Profiles</span></div>
@@ -427,7 +524,6 @@ const Administration = () => {
           </>
         )}
 
-        {/* ============= RADIUS SERVER SEQUENCES ============= */}
         {active === 'radius-sequences' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Layers size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>RADIUS Server Sequences</span></div>
@@ -526,7 +622,7 @@ const Administration = () => {
         {active === 'admin-users' && (
           <>
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2"><Users size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Administrator Users</span></div>
+              <div className="flex items-center gap-2"><Users size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Administrators</span></div>
               <button className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddAdminOpen(true)}>+ Add Admin</button>
             </div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click an admin user to view details and menu access</div>
@@ -543,14 +639,14 @@ const Administration = () => {
             <UserDetailDialog user={selectedAdminUser} type="admin" open={adminUserOpen} onOpenChange={setAdminUserOpen} />
             <Dialog open={addAdminOpen} onOpenChange={setAddAdminOpen}>
               <DialogContent className="max-w-md">
-                <DialogHeader><DialogTitle className="text-sm">Add Administrator User</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle className="text-sm">Add Administrator</DialogTitle></DialogHeader>
                 <div className="space-y-3 text-xs">
                   {[['Username', 'text'], ['Email', 'email'], ['Password', 'password']].map(([label, type]) => (
                     <div key={label}><label className="block mb-1 font-medium" style={{ color: '#555' }}>{label}</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type={type} /></div>
                   ))}
-                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Admin Group</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Super Admin</option><option>Network Device Admin</option><option>Help Desk Admin</option><option>Read Only Admin</option><option>System Admin</option></select></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Admin Group</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Super Admin</option><option>Network Device Admin</option><option>Help Desk Admin</option><option>Read Only Admin</option><option>System Admin</option><option>Policy Admin</option><option>MnT Admin</option></select></div>
                 </div>
-                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddAdminOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => setAddAdminOpen(false)}>Create</Button></DialogFooter>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddAdminOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => { toast.success("Administrator created"); setAddAdminOpen(false); }}>Create</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           </>

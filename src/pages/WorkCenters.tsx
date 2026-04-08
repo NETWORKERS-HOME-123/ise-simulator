@@ -11,46 +11,58 @@ import CommandSetDialog from "@/components/CommandSetDialog";
 import SXPDeviceDialog from "@/components/SXPDeviceDialog";
 
 const sections: NavSection[] = [
+  { label: 'Network Access', items: [
+    { label: 'Overview', key: 'netaccess-overview' },
+    { label: 'Policy Sets', key: 'netaccess-policies' },
+    { label: 'External RADIUS Servers', key: 'netaccess-ext-radius' },
+    { label: 'External ID Sources', key: 'netaccess-ext-id' },
+    { label: 'Network Devices', key: 'netaccess-devices' },
+  ], defaultOpen: true },
   { label: 'Guest Access', items: [
     { label: 'Overview', key: 'guest-overview' },
     { label: 'Portals & Components', key: 'guest-portals' },
     { label: 'Sponsor Groups', key: 'sponsor-groups' },
     { label: 'Guest Types', key: 'guest-types' },
-  ], defaultOpen: true },
+    { label: 'Settings', key: 'guest-settings' },
+  ], defaultOpen: false },
   { label: 'BYOD', items: [
     { label: 'Overview', key: 'byod-overview' },
     { label: 'My Devices Portal', key: 'my-devices' },
-    { label: 'BYOD Settings', key: 'byod-settings' },
+    { label: 'Settings', key: 'byod-settings' },
   ], defaultOpen: false },
   { label: 'Device Administration', items: [
     { label: 'Overview', key: 'devadmin-overview' },
+    { label: 'Policy Sets', key: 'devadmin-policies' },
+    { label: 'Policy Elements', key: 'devadmin-elements' },
     { label: 'TACACS Profiles', key: 'tacacs-profiles' },
     { label: 'TACACS Command Sets', key: 'tacacs-commands' },
-    { label: 'Device Admin Policy Sets', key: 'devadmin-policies' },
+    { label: 'Network Resources', key: 'devadmin-resources' },
+    { label: 'Settings', key: 'devadmin-settings' },
   ], defaultOpen: false },
   { label: 'Posture', items: [
     { label: 'Overview', key: 'posture-overview' },
     { label: 'Posture Policy', key: 'posture-policy' },
+    { label: 'Policy Elements', key: 'posture-elements' },
     { label: 'Posture Conditions', key: 'posture-conditions' },
     { label: 'Posture Requirements', key: 'posture-requirements' },
     { label: 'Remediation Actions', key: 'posture-remediation' },
     { label: 'Client Provisioning', key: 'posture-provisioning' },
+    { label: 'Settings', key: 'posture-settings' },
   ], defaultOpen: false },
   { label: 'TrustSec', items: [
     { label: 'Overview', key: 'trustsec-overview' },
+    { label: 'Components', key: 'trustsec-components' },
     { label: 'Security Groups (SGTs)', key: 'security-groups' },
-    { label: 'TrustSec Policy', key: 'trustsec-policy' },
+    { label: 'SGACLs', key: 'sgacls' },
     { label: 'IP-SGT Mapping', key: 'ip-sgt' },
     { label: 'SXP Devices', key: 'sxp-devices' },
-  ], defaultOpen: false },
-  { label: 'Network Access', items: [
-    { label: 'Overview', key: 'netaccess-overview' },
-    { label: 'Policy Sets', key: 'netaccess-policies' },
+    { label: 'TrustSec Policy', key: 'trustsec-policy' },
+    { label: 'Settings', key: 'trustsec-settings' },
   ], defaultOpen: false },
 ];
 
 const WorkCenters = () => {
-  const [active, setActive] = useState('guest-overview');
+  const [active, setActive] = useState('netaccess-overview');
   const [selectedCondition, setSelectedCondition] = useState<typeof postureConditions[0] | null>(null);
   const [conditionOpen, setConditionOpen] = useState(false);
   const [selectedGuestType, setSelectedGuestType] = useState<string | null>(null);
@@ -77,6 +89,55 @@ const WorkCenters = () => {
       <div className="flex-1 p-4 space-y-3 overflow-auto">
         <div className="text-xs" style={{ color: '#666' }}>Work Centers &gt; {secLabel} &gt; <span className="font-semibold" style={{ color: '#333' }}>{itemLabel}</span></div>
 
+        {/* ========== NETWORK ACCESS ========== */}
+        {active === 'netaccess-overview' && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2"><Wifi size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Access</span></div>
+            <div className="grid grid-cols-3 gap-4">
+              <StatCard label="Active Policy Sets" value={String(policySets.filter(p => p.status === 'Enabled').length)} color="#049fd9" />
+              <StatCard label="Total Policy Hits (24h)" value={policySets.reduce((a, p) => a + p.hits, 0).toLocaleString()} color="#6cc04a" />
+              <StatCard label="Authentication Rate" value="97.3%" color="#6cc04a" />
+            </div>
+            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>Network Access provides 802.1X, MAB, and web authentication policy management for wired and wireless endpoints.</div>
+          </div>
+        )}
+
+        {active === 'netaccess-policies' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Wifi size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Access Policy Sets</span></div>
+            <ISETable headers={['#', 'Policy Set', 'Status', 'Conditions', 'Allowed Protocols', 'Hits']}
+              rows={policySets.map(p => [
+                <span className="font-mono" style={{ color: '#999' }}>{p.id}</span>,
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
+                p.status === 'Enabled' ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Enabled</span> : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#999' }} /> Disabled</span>,
+                <span className="font-mono" style={{ color: '#666' }}>{p.conditions}</span>,
+                p.authPolicy,
+                <span className="font-mono">{p.hits.toLocaleString()}</span>,
+              ])} />
+          </>
+        )}
+
+        {active === 'netaccess-ext-radius' && (
+          <div className="text-xs p-4 border border-border rounded bg-card" style={{ color: '#888' }}>
+            <div className="flex items-center gap-2 mb-2"><Wifi size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>External RADIUS Servers</span></div>
+            Configure external RADIUS servers for proxy authentication. Manage these under Administration &gt; Network Resources &gt; External RADIUS Servers.
+          </div>
+        )}
+
+        {active === 'netaccess-ext-id' && (
+          <div className="text-xs p-4 border border-border rounded bg-card" style={{ color: '#888' }}>
+            <div className="flex items-center gap-2 mb-2"><Wifi size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>External Identity Sources</span></div>
+            Configure Active Directory, LDAP, and SAML identity sources. Manage these under Administration &gt; Identity Management &gt; External Identity Sources.
+          </div>
+        )}
+
+        {active === 'netaccess-devices' && (
+          <div className="text-xs p-4 border border-border rounded bg-card" style={{ color: '#888' }}>
+            <div className="flex items-center gap-2 mb-2"><Wifi size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Devices</span></div>
+            Configure network access devices (switches, WLCs). Manage these under Administration &gt; Network Resources &gt; Network Devices.
+          </div>
+        )}
+
         {/* ========== GUEST ACCESS ========== */}
         {active === 'guest-overview' && (
           <div className="space-y-4">
@@ -86,13 +147,13 @@ const WorkCenters = () => {
               <StatCard label="Guest Portals" value={String(guestPortals.length)} color="#049fd9" />
               <StatCard label="Sponsor Groups" value={String(sponsorGroups.length)} color="#fbab18" />
             </div>
-            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>Guest Access provides secure, policy-driven network access for visitors and temporary users.</div>
+            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>Guest Access provides secure, policy-driven network access for visitors and temporary users through captive portals.</div>
           </div>
         )}
 
         {active === 'guest-portals' && (
           <>
-            <div className="flex items-center gap-2 mb-2"><Users size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Guest Portals</span></div>
+            <div className="flex items-center gap-2 mb-2"><Users size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Guest Portals & Components</span></div>
             <ISETable headers={['Portal Name', 'Type', 'URL', 'Auth Method', 'Theme', 'Status']}
               rows={guestPortals.map(p => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
@@ -138,6 +199,17 @@ const WorkCenters = () => {
           </>
         )}
 
+        {active === 'guest-settings' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2"><Users size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Guest Access Settings</span></div>
+            <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
+              {[['Guest Account Purge', 'Enabled — every 24 hours'], ['Self-Registration Approval', 'Auto-Approve'], ['SMS Gateway', 'Configured — Twilio'], ['SMTP Notifications', 'Enabled'], ['AUP Page', 'Enabled — must scroll to accept']].map(([l, v]) => (
+                <div key={l} className="flex items-center"><span className="w-44 font-medium" style={{ color: '#555' }}>{l}</span><span className="font-mono" style={{ color: '#333' }}>{v}</span></div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ========== BYOD ========== */}
         {active === 'byod-overview' && (
           <div className="space-y-4">
@@ -147,7 +219,7 @@ const WorkCenters = () => {
               <StatCard label="Pending Registration" value="8" color="#fbab18" />
               <StatCard label="Certificates Issued" value="298" color="#6cc04a" />
             </div>
-            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>BYOD allows employees to register personal devices and receive provisioned certificates.</div>
+            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>BYOD allows employees to register personal devices and receive provisioned certificates for secure network access.</div>
             <div className="border border-border rounded bg-card p-4">
               <div className="text-xs font-semibold mb-2" style={{ color: '#333' }}>BYOD Onboarding Flow</div>
               <div className="flex items-center gap-2 text-[11px]">
@@ -195,6 +267,31 @@ const WorkCenters = () => {
               <StatCard label="TACACS+ Profiles" value={String(tacacsProfiles.length)} color="#049fd9" />
               <StatCard label="Command Sets" value={String(tacacsCommandSets.length)} color="#6cc04a" />
               <StatCard label="Device Admin Sessions (24h)" value="128" color="#fbab18" />
+            </div>
+          </div>
+        )}
+
+        {active === 'devadmin-elements' && (
+          <div className="text-xs p-4 border border-border rounded bg-card" style={{ color: '#666' }}>
+            <div className="flex items-center gap-2 mb-2"><Server size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Device Admin Policy Elements</span></div>
+            <p>Configure TACACS+ shell profiles and command sets used in device administration policy sets. Use the left navigation to access individual elements.</p>
+          </div>
+        )}
+
+        {active === 'devadmin-resources' && (
+          <div className="text-xs p-4 border border-border rounded bg-card" style={{ color: '#888' }}>
+            <div className="flex items-center gap-2 mb-2"><Server size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Device Admin Network Resources</span></div>
+            Network devices for TACACS+ are shared with Administration &gt; Network Resources &gt; Network Devices. Ensure TACACS+ is enabled on the device configuration.
+          </div>
+        )}
+
+        {active === 'devadmin-settings' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2"><Server size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Device Administration Settings</span></div>
+            <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
+              {[['TACACS+ Service', 'Enabled'], ['Default Shared Secret', '●●●●●●●●'], ['Single Connect Support', 'Draft Compliance'], ['Session Timeout', '300 seconds'], ['Logging Level', 'Full']].map(([l, v]) => (
+                <div key={l} className="flex items-center"><span className="w-44 font-medium" style={{ color: '#555' }}>{l}</span><span className="font-mono" style={{ color: '#333' }}>{v}</span></div>
+              ))}
             </div>
           </div>
         )}
@@ -263,7 +360,30 @@ const WorkCenters = () => {
               <StatCard label="Non-Compliant" value="156" color="#cc0000" />
               <StatCard label="Pending Assessment" value="89" color="#fbab18" />
             </div>
-            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>Posture service checks endpoint compliance before granting full network access.</div>
+            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>Posture service checks endpoint compliance before granting full network access. Configure conditions, requirements, and remediation actions.</div>
+          </div>
+        )}
+
+        {active === 'posture-elements' && (
+          <div className="text-xs p-4 border border-border rounded bg-card" style={{ color: '#666' }}>
+            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Posture Policy Elements</span></div>
+            <p>Configure the building blocks of posture assessment policies:</p>
+            <ul className="list-disc ml-4 mt-2 space-y-1">
+              <li><strong>Conditions</strong> — AV, firewall, disk encryption, registry, file checks</li>
+              <li><strong>Requirements</strong> — Group conditions with remediation actions</li>
+              <li><strong>Remediation Actions</strong> — Scripts, links, patches, file downloads</li>
+            </ul>
+          </div>
+        )}
+
+        {active === 'posture-settings' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Posture Settings</span></div>
+            <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
+              {[['Posture Lease', '7 days'], ['Remediation Timer', '15 minutes'], ['Default Posture Status', 'Non-Compliant'], ['Continuous Monitoring', 'Enabled'], ['Stealth Mode', 'Disabled'], ['AUP Required', 'Enabled']].map(([l, v]) => (
+                <div key={l} className="flex items-center"><span className="w-44 font-medium" style={{ color: '#555' }}>{l}</span><span className="font-mono" style={{ color: '#333' }}>{v}</span></div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -351,8 +471,39 @@ const WorkCenters = () => {
               <StatCard label="SGT-Tagged Endpoints" value="2,847" color="#6cc04a" />
               <StatCard label="SXP Peers" value={String(sxpDevices.length)} color="#fbab18" />
             </div>
-            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>Cisco TrustSec enables software-defined segmentation using Security Group Tags (SGTs).</div>
+            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>Cisco TrustSec enables software-defined segmentation using Security Group Tags (SGTs) and Security Group ACLs (SGACLs).</div>
           </div>
+        )}
+
+        {active === 'trustsec-components' && (
+          <div className="text-xs p-4 border border-border rounded bg-card" style={{ color: '#666' }}>
+            <div className="flex items-center gap-2 mb-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>TrustSec Components</span></div>
+            <p>TrustSec components define the segmentation policy building blocks:</p>
+            <ul className="list-disc ml-4 mt-2 space-y-1">
+              <li><strong>Security Groups (SGTs)</strong> — Tags assigned to endpoints based on identity/posture</li>
+              <li><strong>SGACLs</strong> — Access control lists applied between security groups</li>
+              <li><strong>IP-SGT Mapping</strong> — Static IP-to-SGT assignments</li>
+              <li><strong>SXP Devices</strong> — SGT Exchange Protocol peers</li>
+            </ul>
+          </div>
+        )}
+
+        {active === 'sgacls' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Security Group ACLs (SGACLs)</span></div>
+            <ISETable headers={['SGACL Name', 'IP Version', 'ACE Content', 'Description']}
+              rows={[
+                ['Deny_IP_Log', 'IPv4', 'deny ip log', 'Deny all IP traffic with logging'],
+                ['Permit_IP', 'IPv4', 'permit ip', 'Permit all IP traffic'],
+                ['Deny_ICMP_Permit_Rest', 'IPv4', 'deny icmp\npermit ip', 'Block ICMP, allow everything else'],
+                ['Server_Access', 'IPv4', 'permit tcp dst eq 443\npermit tcp dst eq 80\ndeny ip', 'Allow HTTP/HTTPS only'],
+              ].map(r => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{r[0]}</span>,
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#049fd920', color: '#049fd9' }}>{r[1]}</span>,
+                <span className="font-mono text-[10px]" style={{ color: '#666' }}>{r[2]}</span>,
+                <span style={{ color: '#666' }}>{r[3]}</span>,
+              ])} />
+          </>
         )}
 
         {active === 'security-groups' && (
@@ -390,6 +541,17 @@ const WorkCenters = () => {
           </>
         )}
 
+        {active === 'trustsec-settings' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>TrustSec Settings</span></div>
+            <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
+              {[['TrustSec Service', 'Enabled'], ['CTS Device ID', 'ise-pan01'], ['CTS Password', '●●●●●●●●'], ['Environment Data Download', 'Enabled'], ['Peer Authorization Policy', 'Cisco TrustSec Matrix'], ['SGT Notifications', 'Enabled']].map(([l, v]) => (
+                <div key={l} className="flex items-center"><span className="w-52 font-medium" style={{ color: '#555' }}>{l}</span><span className="font-mono" style={{ color: '#333' }}>{v}</span></div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {active === 'ip-sgt' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>IP-SGT Static Mapping</span></div>
@@ -420,33 +582,6 @@ const WorkCenters = () => {
               onRowClick={(i) => { setSelectedSXP(sxpDevices[i]); setSxpOpen(true); }}
             />
             <SXPDeviceDialog device={selectedSXP} open={sxpOpen} onOpenChange={setSxpOpen} />
-          </>
-        )}
-
-        {/* ========== NETWORK ACCESS ========== */}
-        {active === 'netaccess-overview' && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2"><Wifi size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Access</span></div>
-            <div className="grid grid-cols-3 gap-4">
-              <StatCard label="Active Policy Sets" value={String(policySets.filter(p => p.status === 'Enabled').length)} color="#049fd9" />
-              <StatCard label="Total Policy Hits (24h)" value={policySets.reduce((a, p) => a + p.hits, 0).toLocaleString()} color="#6cc04a" />
-              <StatCard label="Authentication Rate" value="97.3%" color="#6cc04a" />
-            </div>
-          </div>
-        )}
-
-        {active === 'netaccess-policies' && (
-          <>
-            <div className="flex items-center gap-2 mb-2"><Wifi size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Access Policy Sets</span></div>
-            <ISETable headers={['#', 'Policy Set', 'Status', 'Conditions', 'Auth Policy', 'Authz Policy', 'Hits']}
-              rows={policySets.map(p => [
-                <span className="font-mono" style={{ color: '#999' }}>{p.id}</span>,
-                <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
-                p.status === 'Enabled' ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Enabled</span> : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#999' }} /> Disabled</span>,
-                <span className="font-mono" style={{ color: '#666' }}>{p.conditions}</span>,
-                p.authPolicy, p.authzPolicy,
-                <span className="font-mono">{p.hits.toLocaleString()}</span>,
-              ])} />
           </>
         )}
       </div>
