@@ -32,6 +32,8 @@ const App = () => (
               <Route path="/policy" element={<Policy />} />
               <Route path="/work-centers" element={<WorkCenters />} />
               <Route path="/administration" element={<Administration />} />
+              <Route path="/threat-containment" element={<ThreatContainment />} />
+              <Route path="/pxgrid" element={<PxGrid />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
