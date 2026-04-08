@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import ISELeftNav, { NavSection } from "@/components/ISELeftNav";
 import NodeDetailDialog from "@/components/NodeDetailDialog";
 import NetworkDeviceDetailDialog from "@/components/NetworkDeviceDetailDialog";
 import CertificateDetailDialog from "@/components/CertificateDetailDialog";
 import UserDetailDialog from "@/components/UserDetailDialog";
 import BackupRestorePanel from "@/components/BackupRestorePanel";
-import { deploymentNodes, licenses, systemCertificates, trustedCertificates, adminUsers, networkDevices, networkDeviceGroups, internalUsers, identityGroupsList, externalIdentitySources } from "@/lib/mockData";
+import { useSimulation } from "@/context/ISESimulationContext";
+import { deploymentNodes, licenses, systemCertificates, trustedCertificates, adminUsers, networkDeviceGroups, identityGroupsList, externalIdentitySources } from "@/lib/mockData";
 import { systemSettings, licensingDetails } from "@/lib/mockDataExtended";
 import { networkDeviceProfiles, smtpConfig, ntpServers, patchHistory, ersApiSettings, dataConnectSettings } from "@/lib/mockDataGap";
 import { Server, CheckCircle, XCircle, Key, Shield, Users, Settings, ToggleLeft, Router, Layers, UserCheck, Database, Globe, HardDrive, Wrench, Plug } from "lucide-react";
@@ -62,6 +63,7 @@ type CertTab = 'system' | 'trusted' | 'ca' | 'csr';
 type SettingsTab = 'general' | 'eap-tls' | 'radius' | 'profiler' | 'posture' | 'pxgrid' | 'logging';
 
 const Administration = () => {
+  const sim = useSimulation();
   const [active, setActive] = useState('deployment');
   const [selectedNode, setSelectedNode] = useState<typeof deploymentNodes[0] | null>(null);
   const [nodeDialogOpen, setNodeDialogOpen] = useState(false);
@@ -71,15 +73,60 @@ const Administration = () => {
   const [addAdminOpen, setAddAdminOpen] = useState(false);
   const [addDeviceOpen, setAddDeviceOpen] = useState(false);
   const [addUserOpen, setAddUserOpen] = useState(false);
-  const [selectedDevice, setSelectedDevice] = useState<typeof networkDevices[0] | null>(null);
+  const [selectedDevice, setSelectedDevice] = useState<any>(null);
   const [deviceDetailOpen, setDeviceDetailOpen] = useState(false);
   const [selectedCert, setSelectedCert] = useState<typeof systemCertificates[0] | null>(null);
   const [certDetailOpen, setCertDetailOpen] = useState(false);
-  const [selectedInternalUser, setSelectedInternalUser] = useState<typeof internalUsers[0] | null>(null);
+  const [selectedInternalUser, setSelectedInternalUser] = useState<any>(null);
   const [internalUserOpen, setInternalUserOpen] = useState(false);
   const [selectedAdminUser, setSelectedAdminUser] = useState<typeof adminUsers[0] | null>(null);
   const [adminUserOpen, setAdminUserOpen] = useState(false);
   const [licenseDetailOpen, setLicenseDetailOpen] = useState(false);
+  // Add Device form state
+  const [newDeviceName, setNewDeviceName] = useState('');
+  const [newDeviceIP, setNewDeviceIP] = useState('');
+  const [newDeviceSecret, setNewDeviceSecret] = useState('');
+  const [newDeviceProfile, setNewDeviceProfile] = useState('Cisco');
+  const [newDeviceType, setNewDeviceType] = useState('Switch');
+  const [newDeviceLocation, setNewDeviceLocation] = useState('Building A');
+  // Add User form state
+  const [newUsername, setNewUsername] = useState('');
+  const [newFirstName, setNewFirstName] = useState('');
+  const [newLastName, setNewLastName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newIdentityGroup, setNewIdentityGroup] = useState('Employee');
+
+  const handleAddDevice = () => {
+    if (!newDeviceName.trim() || !newDeviceIP.trim()) { toast.error('Device name and IP are required'); return; }
+    sim.addNetworkDevice({
+      name: newDeviceName,
+      ip: newDeviceIP,
+      type: newDeviceType,
+      location: newDeviceLocation,
+      profile: newDeviceProfile,
+      status: 'Enabled',
+      tacacs: false,
+      sharedSecret: newDeviceSecret || '••••••••',
+    } as any);
+    setAddDeviceOpen(false);
+    setNewDeviceName(''); setNewDeviceIP(''); setNewDeviceSecret('');
+  };
+
+  const handleAddUser = () => {
+    if (!newUsername.trim()) { toast.error('Username is required'); return; }
+    sim.addInternalUser({
+      name: newUsername,
+      firstName: newFirstName || newUsername,
+      lastName: newLastName || '',
+      email: newEmail || `${newUsername}@corp.local`,
+      identityGroup: newIdentityGroup,
+      status: 'Enabled',
+      lastPasswordChange: new Date().toISOString().split('T')[0],
+    } as any);
+    setAddUserOpen(false);
+    setNewUsername(''); setNewFirstName(''); setNewLastName(''); setNewEmail(''); setNewPassword('');
+  };
 
   const getSectionLabel = () => {
     const section = sections.find(s => s.items.some(i => i.key === active));
@@ -456,7 +503,7 @@ const Administration = () => {
             </div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a device to configure RADIUS, TACACS+, SNMP, and TrustSec settings</div>
             <ISETable headers={['Name', 'IP Address', 'Device Type', 'Location', 'Profile', 'TACACS+', 'Status']}
-              rows={networkDevices.map(d => [
+              rows={sim.networkDevices.map(d => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{d.name}</span>,
                 <span className="font-mono">{d.ip}</span>,
                 <span style={{ color: '#666' }}>{d.type}</span>,
@@ -464,27 +511,26 @@ const Administration = () => {
                 d.tacacs ? <CheckCircle size={12} style={{ color: '#6cc04a' }} /> : <XCircle size={12} style={{ color: '#ccc' }} />,
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#6cc04a20', color: '#3d7a2a' }}>{d.status}</span>,
               ])}
-              onRowClick={(i) => { setSelectedDevice(networkDevices[i]); setDeviceDetailOpen(true); }}
+              onRowClick={(i) => { setSelectedDevice(sim.networkDevices[i]); setDeviceDetailOpen(true); }}
             />
             <NetworkDeviceDetailDialog device={selectedDevice} open={deviceDetailOpen} onOpenChange={setDeviceDetailOpen} />
             <Dialog open={addDeviceOpen} onOpenChange={setAddDeviceOpen}>
               <DialogContent className="max-w-lg">
                 <DialogHeader><DialogTitle className="text-sm">Add Network Device</DialogTitle></DialogHeader>
                 <div className="space-y-3 text-xs">
-                  {[['Device Name', 'text'], ['IP Address / IP Range', 'text'], ['RADIUS Shared Secret', 'password']].map(([label, type]) => (
-                    <div key={label}><label className="block mb-1 font-medium" style={{ color: '#555' }}>{label}</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type={type} /></div>
-                  ))}
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Name *</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDeviceName} onChange={e => setNewDeviceName(e.target.value)} placeholder="e.g. LAB-SW-01" /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>IP Address / IP Range *</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDeviceIP} onChange={e => setNewDeviceIP(e.target.value)} placeholder="e.g. 10.10.10.1" /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>RADIUS Shared Secret</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type="password" value={newDeviceSecret} onChange={e => setNewDeviceSecret(e.target.value)} /></div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Profile</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Cisco</option><option>Aruba</option><option>HP</option><option>Juniper</option><option>Meraki</option></select></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Profile</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDeviceProfile} onChange={e => setNewDeviceProfile(e.target.value)}><option>Cisco</option><option>Aruba</option><option>HP</option><option>Juniper</option><option>Meraki</option></select></div>
                     <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Model Name</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" placeholder="e.g. Catalyst 9300" /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Type (NDG)</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Switch</option><option>Wireless Controller</option><option>Firewall</option><option>VPN</option><option>Router</option><option>Access Point</option></select></div>
-                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Location (NDG)</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Building A</option><option>Building B</option><option>Data Center</option><option>DMZ</option><option>Remote</option></select></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Device Type (NDG)</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDeviceType} onChange={e => setNewDeviceType(e.target.value)}><option>Switch</option><option>Wireless Controller</option><option>Firewall</option><option>VPN</option><option>Router</option><option>Access Point</option></select></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Location (NDG)</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDeviceLocation} onChange={e => setNewDeviceLocation(e.target.value)}><option>Building A</option><option>Building B</option><option>Data Center</option><option>DMZ</option><option>Remote</option></select></div>
                   </div>
-                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Software Version</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" placeholder="e.g. 17.9.1" /></div>
                 </div>
-                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDeviceOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => { toast.success("Network device added successfully"); setAddDeviceOpen(false); }}>Save</Button></DialogFooter>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDeviceOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={handleAddDevice}>Save</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           </>
@@ -550,7 +596,7 @@ const Administration = () => {
             </div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a user to edit details and custom attributes</div>
             <ISETable headers={['Username', 'First Name', 'Last Name', 'Email', 'Identity Group', 'Status', 'Last Password Change']}
-              rows={internalUsers.map(u => [
+              rows={sim.internalUsers.map(u => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{u.name}</span>,
                 u.firstName, u.lastName,
                 <span className="font-mono text-[11px]">{u.email}</span>,
@@ -558,19 +604,23 @@ const Administration = () => {
                 u.status === 'Enabled' ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Enabled</span> : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#cc0000' }} /> Disabled</span>,
                 <span className="font-mono" style={{ color: '#888' }}>{u.lastPasswordChange}</span>,
               ])}
-              onRowClick={(i) => { setSelectedInternalUser(internalUsers[i]); setInternalUserOpen(true); }}
+              onRowClick={(i) => { setSelectedInternalUser(sim.internalUsers[i]); setInternalUserOpen(true); }}
             />
             <UserDetailDialog user={selectedInternalUser} type="internal" open={internalUserOpen} onOpenChange={setInternalUserOpen} />
             <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
               <DialogContent className="max-w-md">
                 <DialogHeader><DialogTitle className="text-sm">Add Internal User</DialogTitle></DialogHeader>
                 <div className="space-y-3 text-xs">
-                  {[['Username', 'text'], ['First Name', 'text'], ['Last Name', 'text'], ['Email', 'email'], ['Password', 'password']].map(([label, type]) => (
-                    <div key={label}><label className="block mb-1 font-medium" style={{ color: '#555' }}>{label}</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type={type} /></div>
-                  ))}
-                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Identity Group</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card">{identityGroupsList.map(g => <option key={g.id}>{g.name}</option>)}</select></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Username *</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="e.g. labuser" /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>First Name</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newFirstName} onChange={e => setNewFirstName(e.target.value)} /></div>
+                    <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Last Name</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newLastName} onChange={e => setNewLastName(e.target.value)} /></div>
+                  </div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Email</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Password</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Identity Group</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newIdentityGroup} onChange={e => setNewIdentityGroup(e.target.value)}>{identityGroupsList.map(g => <option key={g.id}>{g.name}</option>)}</select></div>
                 </div>
-                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddUserOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => { toast.success("Internal user created successfully"); setAddUserOpen(false); }}>Create</Button></DialogFooter>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddUserOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={handleAddUser}>Create</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           </>

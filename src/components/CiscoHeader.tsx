@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Settings, Bell, User, HelpCircle, Search, BookOpen, RotateCcw } from "lucide-react";
+import { Settings, Bell, User, HelpCircle, Search, BookOpen, RotateCcw, Play, ChevronDown, ChevronRight, CheckCircle, Circle, X } from "lucide-react";
 import { useSimulation } from "@/context/ISESimulationContext";
-import LabGuidePanel from "@/components/LabGuidePanel";
+import { useWalkthrough } from "@/context/WalkthroughContext";
+import { labs } from "@/lib/labDefinitions";
 
 const navTabs = [
   { label: "Home", path: "/" },
@@ -17,7 +18,37 @@ const CiscoHeader = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const sim = useSimulation();
-  const [labOpen, setLabOpen] = useState(false);
+  const wt = useWalkthrough();
+  const [labDropdownOpen, setLabDropdownOpen] = useState(false);
+  const [expandedLab, setExpandedLab] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setLabDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const getLabProgress = (labId: string) => {
+    const l = labs.find(lb => lb.id === labId);
+    if (!l) return 0;
+    const completed = l.steps.filter(s => s.validation(sim)).length;
+    return Math.round((completed / l.steps.length) * 100);
+  };
+
+  const handleStartLab = (labId: string) => {
+    wt.startWalkthrough(labId);
+    setLabDropdownOpen(false);
+  };
+
+  const totalProgress = Math.round(
+    labs.reduce((acc, l) => acc + l.steps.filter(s => s.validation(sim)).length, 0) /
+    labs.reduce((acc, l) => acc + l.steps.length, 0) * 100
+  );
 
   return (
     <>
@@ -31,9 +62,102 @@ const CiscoHeader = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors hover:bg-white/10" style={{ color: '#6cc04a', border: '1px solid #6cc04a40' }} onClick={() => setLabOpen(!labOpen)}>
-              <BookOpen size={13} /> Lab Guide
-            </button>
+            {/* Lab Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium transition-colors hover:bg-white/10"
+                style={{ color: '#6cc04a', border: '1px solid #6cc04a40' }}
+                onClick={() => setLabDropdownOpen(!labDropdownOpen)}
+              >
+                <BookOpen size={13} />
+                Labs
+                {totalProgress > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: totalProgress === 100 ? '#6cc04a' : '#049fd9', color: '#fff' }}>
+                    {totalProgress}%
+                  </span>
+                )}
+                <ChevronDown size={11} />
+              </button>
+
+              {labDropdownOpen && (
+                <div
+                  className="absolute right-0 top-full mt-1 w-96 bg-card border border-border rounded-lg shadow-2xl overflow-hidden"
+                  style={{ zIndex: 9999 }}
+                >
+                  <div className="px-3 py-2 flex items-center justify-between" style={{ background: '#049fd9' }}>
+                    <span className="text-xs font-semibold text-white">Hands-On Lab Exercises</span>
+                    <button className="p-0.5 rounded hover:bg-white/20" onClick={() => { sim.resetAll(); }}>
+                      <RotateCcw size={11} color="#fff" />
+                    </button>
+                  </div>
+                  <div className="max-h-[60vh] overflow-y-auto">
+                    {labs.map(l => {
+                      const progress = getLabProgress(l.id);
+                      const isExpanded = expandedLab === l.id;
+                      return (
+                        <div key={l.id} className="border-b border-border last:border-b-0">
+                          <button
+                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-accent/30 transition-colors"
+                            onClick={() => setExpandedLab(isExpanded ? null : l.id)}
+                          >
+                            {progress === 100 ? (
+                              <CheckCircle size={14} style={{ color: '#6cc04a' }} />
+                            ) : (
+                              <Circle size={14} style={{ color: '#ccc' }} />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold truncate" style={{ color: '#333' }}>{l.title}</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded ml-2 shrink-0" style={{
+                                  background: l.difficulty === 'Beginner' ? '#6cc04a20' : l.difficulty === 'Intermediate' ? '#fbab1830' : '#cc000020',
+                                  color: l.difficulty === 'Beginner' ? '#3d7a2a' : l.difficulty === 'Intermediate' ? '#b47a00' : '#cc0000'
+                                }}>{l.difficulty}</span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="flex-1 h-1 rounded-full" style={{ background: '#e5e5e5' }}>
+                                  <div className="h-1 rounded-full transition-all" style={{ width: `${progress}%`, background: progress === 100 ? '#6cc04a' : '#049fd9' }} />
+                                </div>
+                                <span className="text-[9px] font-mono shrink-0" style={{ color: '#888' }}>{progress}%</span>
+                              </div>
+                            </div>
+                            {isExpanded ? <ChevronDown size={12} style={{ color: '#888' }} /> : <ChevronRight size={12} style={{ color: '#888' }} />}
+                          </button>
+
+                          {isExpanded && (
+                            <div className="px-3 pb-3 space-y-2" style={{ background: '#fafafa' }}>
+                              <div className="text-[10px] mb-1" style={{ color: '#666' }}>{l.description}</div>
+                              <div className="text-[10px]" style={{ color: '#888' }}>⏱ {l.estimatedTime} • {l.steps.length} steps</div>
+
+                              {/* Steps list */}
+                              <div className="space-y-1">
+                                {l.steps.map((step, i) => {
+                                  const done = step.validation(sim);
+                                  return (
+                                    <div key={step.id} className="flex items-center gap-2 text-[10px] px-2 py-1 rounded" style={{ background: done ? '#6cc04a10' : '#fff', border: '1px solid #e5e5e5' }}>
+                                      {done ? <CheckCircle size={10} style={{ color: '#6cc04a' }} /> : <Circle size={10} style={{ color: '#ccc' }} />}
+                                      <span style={{ color: done ? '#3d7a2a' : '#555' }}>Step {i + 1}: {step.title}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              <button
+                                className="w-full flex items-center justify-center gap-1.5 text-[11px] px-3 py-1.5 rounded text-white font-medium mt-2"
+                                style={{ background: progress === 100 ? '#6cc04a' : '#049fd9' }}
+                                onClick={() => handleStartLab(l.id)}
+                              >
+                                <Play size={11} /> {progress === 100 ? 'Replay Lab' : progress > 0 ? 'Continue Lab' : 'Start Lab'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button className="p-1.5 rounded hover:bg-white/10 transition-colors" title="Reset Simulation" onClick={() => sim.resetAll()}>
               <RotateCcw size={14} style={{ color: '#ccc' }} />
             </button>
@@ -80,7 +204,6 @@ const CiscoHeader = () => {
           })}
         </nav>
       </header>
-      <LabGuidePanel open={labOpen} onClose={() => setLabOpen(false)} />
     </>
   );
 };

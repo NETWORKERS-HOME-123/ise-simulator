@@ -34,9 +34,13 @@ const Operations = () => {
   const [ancApplyOpen, setAncApplyOpen] = useState(false);
   const [ancMac, setAncMac] = useState('');
   const [ancPolicy, setAncPolicy] = useState('ANC-Quarantine');
-  const [localAnc, setLocalAnc] = useState(sim.ancEndpoints);
   const [debugMac, setDebugMac] = useState('');
   const [debugOutput, setDebugOutput] = useState<string[]>([]);
+  // Auth test state
+  const [testUsername, setTestUsername] = useState('jsmith');
+  const [testPassword, setTestPassword] = useState('••••••');
+  const [testNasIP, setTestNasIP] = useState('10.1.100.1');
+  const [testResult, setTestResult] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (!autoRefresh || tab !== 'live-logs') return;
@@ -261,12 +265,37 @@ const Operations = () => {
             <div className="px-3 py-2 font-semibold text-xs" style={{ background: '#f0f0f0', color: '#333', borderBottom: '1px solid #ddd' }}>RADIUS Authentication Test</div>
             <div className="p-3">
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div><label className="block mb-1" style={{ color: '#555' }}>Username</label><input className="w-full border border-border rounded px-2 py-1 text-xs bg-card" defaultValue="jsmith" /></div>
-                <div><label className="block mb-1" style={{ color: '#555' }}>Password</label><input className="w-full border border-border rounded px-2 py-1 text-xs bg-card" type="password" defaultValue="••••••" /></div>
-                <div><label className="block mb-1" style={{ color: '#555' }}>NAS IP Address</label><input className="w-full border border-border rounded px-2 py-1 text-xs bg-card" defaultValue="10.1.100.1" /></div>
+                <div><label className="block mb-1" style={{ color: '#555' }}>Username</label><input className="w-full border border-border rounded px-2 py-1 text-xs bg-card" value={testUsername} onChange={e => setTestUsername(e.target.value)} /></div>
+                <div><label className="block mb-1" style={{ color: '#555' }}>Password</label><input className="w-full border border-border rounded px-2 py-1 text-xs bg-card" type="password" value={testPassword} onChange={e => setTestPassword(e.target.value)} /></div>
+                <div><label className="block mb-1" style={{ color: '#555' }}>NAS IP Address</label><input className="w-full border border-border rounded px-2 py-1 text-xs bg-card" value={testNasIP} onChange={e => setTestNasIP(e.target.value)} /></div>
                 <div><label className="block mb-1" style={{ color: '#555' }}>Policy Server</label><select className="w-full border border-border rounded px-2 py-1 text-xs bg-card"><option>ise-psn01</option><option>ise-psn02</option></select></div>
               </div>
-              <button data-walkthrough="run-auth-test" className="mt-3 text-xs px-4 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>Run Test</button>
+              <button data-walkthrough="run-auth-test" className="mt-3 text-xs px-4 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => {
+                const user = sim.internalUsers.find(u => u.name === testUsername);
+                const device = sim.networkDevices.find(d => d.ip === testNasIP);
+                const sessionId = `0A0${Math.random().toString(16).slice(2, 10).toUpperCase()}`;
+                sim.addSimulationLog('Auth Test', `Username: ${testUsername}, NAS: ${testNasIP}, Result: ${user ? 'PASS' : 'FAIL'}`);
+                setTestResult([
+                  `[${new Date().toLocaleTimeString()}] RADIUS Auth Test for: ${testUsername}`,
+                  `  → NAS Device: ${device ? device.name : 'Unknown'} (${testNasIP})`,
+                  `  → Step 1: RADIUS Access-Request received`,
+                  `  → Step 2: Identity lookup in Internal Users store`,
+                  user ? `  → Step 3: User "${testUsername}" found in group "${user.identityGroup}"` : `  → Step 3: User "${testUsername}" NOT FOUND — 5405 User not found`,
+                  ...(user ? [
+                    `  → Step 4: Authentication Policy matched`,
+                    `  → Step 5: Authorization Profile applied`,
+                    `  → Step 6: RADIUS Access-Accept sent`,
+                    `  ✓ Authentication PASSED — Session ID: ${sessionId}`,
+                  ] : [
+                    `  ✗ Authentication FAILED — 5405 User not found in identity stores`,
+                  ]),
+                ]);
+              }}>Run Test</button>
+              {testResult && (
+                <div className="font-mono text-[11px] p-2 rounded space-y-0.5 mt-2" style={{ background: '#1a1a1a', color: '#6cc04a' }}>
+                  {testResult.map((line, i) => <div key={i} style={{ color: line.includes('FAIL') || line.includes('NOT FOUND') ? '#cc0000' : '#6cc04a' }}>{line}</div>)}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -301,7 +330,7 @@ const Operations = () => {
           <div className="border border-border rounded overflow-auto bg-card">
             <table className="w-full text-xs">
               <thead><tr style={{ background: '#f0f0f0' }}>{['MAC Address', 'IP Address', 'ANC Policy', 'Status', 'Applied By', 'Applied At', 'Reason'].map(h => <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>)}</tr></thead>
-              <tbody>{localAnc.map((a, i) => (
+              <tbody>{sim.ancEndpoints.map((a, i) => (
                 <tr key={a.id} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className="hover:bg-accent/60">
                   <td className="p-2 font-mono" style={{ color: '#049fd9' }}>{a.mac}</td>
                   <td className="p-2 font-mono">{a.ip}</td>
@@ -322,7 +351,7 @@ const Operations = () => {
                 <div><label className="block mb-1" style={{ color: '#555' }}>ANC Policy</label><select className="w-full border border-border rounded px-2 py-1 text-xs bg-card" value={ancPolicy} onChange={e => setAncPolicy(e.target.value)}><option>ANC-Quarantine</option><option>ANC-Shutdown</option><option>ANC-PortBounce</option></select></div>
               </div>
               <div className="flex gap-2">
-                <button className="text-xs px-3 py-1 rounded text-white" style={{ background: '#049fd9' }} onClick={() => { if (ancMac) { setLocalAnc(prev => [...prev, { id: prev.length + 1, mac: ancMac, ip: '10.1.50.999', policy: ancPolicy, status: ancPolicy === 'ANC-Shutdown' ? 'Port Shutdown' : 'Quarantined', appliedBy: 'admin', appliedAt: new Date().toLocaleString(), reason: 'Manually applied' }]); setAncMac(''); setAncApplyOpen(false); } }}>Apply</button>
+                <button className="text-xs px-3 py-1 rounded text-white" style={{ background: '#049fd9' }} onClick={() => { if (ancMac) { sim.addANCEndpoint({ mac: ancMac, ip: '10.1.50.' + Math.floor(Math.random()*254+1), policy: ancPolicy, status: ancPolicy === 'ANC-Shutdown' ? 'Port Shutdown' : 'Quarantined', appliedBy: 'admin', appliedAt: new Date().toLocaleString(), reason: 'Manually applied' } as any); setAncMac(''); setAncApplyOpen(false); } }}>Apply</button>
                 <button className="text-xs px-3 py-1 rounded border border-border" onClick={() => setAncApplyOpen(false)}>Cancel</button>
               </div>
             </div>

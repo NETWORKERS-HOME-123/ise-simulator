@@ -1,8 +1,9 @@
 import { useState } from "react";
 import ISELeftNav, { NavSection } from "@/components/ISELeftNav";
-import { policySets, authorizationProfiles, policyConditions, radiusDictionaries, profilingPolicies, clientProvisioningResources } from "@/lib/mockData";
+import { useSimulation } from "@/context/ISESimulationContext";
+import { radiusDictionaries, profilingPolicies, clientProvisioningResources } from "@/lib/mockData";
 import { clientProvisioningRuleDetails } from "@/lib/mockDataExtended";
-import { downloadableACLs, allowedProtocolsServices } from "@/lib/mockDataGap";
+import { allowedProtocolsServices } from "@/lib/mockDataGap";
 import { Shield, CheckCircle, XCircle, FileText, Layers, BookOpen, Cpu, Download, Lock, ListChecks, Clock } from "lucide-react";
 import { toast } from "sonner";
 import PolicySetDetailDialog from "@/components/PolicySetDetailDialog";
@@ -40,21 +41,73 @@ const sections: NavSection[] = [
 ];
 
 const Policy = () => {
+  const sim = useSimulation();
   const [active, setActive] = useState('policy-sets');
-  const [selectedPolicySet, setSelectedPolicySet] = useState<typeof policySets[0] | null>(null);
+  const [selectedPolicySet, setSelectedPolicySet] = useState<any>(null);
   const [policySetOpen, setPolicySetOpen] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<typeof authorizationProfiles[0] | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [selectedCondition, setSelectedCondition] = useState<typeof policyConditions[0] | null>(null);
+  const [selectedCondition, setSelectedCondition] = useState<any>(null);
   const [conditionOpen, setConditionOpen] = useState(false);
   const [selectedProfilingPolicy, setSelectedProfilingPolicy] = useState<typeof profilingPolicies[0] | null>(null);
   const [profilingOpen, setProfilingOpen] = useState(false);
   const [selectedCPResource, setSelectedCPResource] = useState<typeof clientProvisioningResources[0] | null>(null);
   const [cpResourceOpen, setCpResourceOpen] = useState(false);
-  const [selectedDACL, setSelectedDACL] = useState<typeof downloadableACLs[0] | null>(null);
+  const [selectedDACL, setSelectedDACL] = useState<any>(null);
   const [daclOpen, setDaclOpen] = useState(false);
   const [selectedProtocol, setSelectedProtocol] = useState<typeof allowedProtocolsServices[0] | null>(null);
   const [protocolOpen, setProtocolOpen] = useState(false);
+  // Add Policy Set form
+  const [addPolicyOpen, setAddPolicyOpen] = useState(false);
+  const [newPolicyName, setNewPolicyName] = useState('');
+  const [newPolicyCondition, setNewPolicyCondition] = useState('Wired_802.1X');
+  // Add Auth Profile form
+  const [addProfileOpen, setAddProfileOpen] = useState(false);
+  const [newProfileName, setNewProfileName] = useState('');
+  const [newProfileAccess, setNewProfileAccess] = useState('ACCESS_ACCEPT');
+  // Add DACL form
+  const [addDaclOpen, setAddDaclOpen] = useState(false);
+  const [newDaclName, setNewDaclName] = useState('');
+  const [newDaclContent, setNewDaclContent] = useState('permit ip any any');
+
+  const handleAddPolicySet = () => {
+    if (!newPolicyName.trim()) { toast.error('Policy set name is required'); return; }
+    sim.addPolicySet({
+      name: newPolicyName,
+      conditions: newPolicyCondition,
+      status: 'Enabled',
+      authPolicy: 'Default Network Access',
+      hits: 0,
+    } as any);
+    setAddPolicyOpen(false);
+    setNewPolicyName('');
+  };
+
+  const handleAddProfile = () => {
+    if (!newProfileName.trim()) { toast.error('Profile name is required'); return; }
+    sim.addAuthzProfile({
+      name: newProfileName,
+      type: 'Standard',
+      description: `Custom profile - ${newProfileName}`,
+      accessType: newProfileAccess,
+      vlan: '',
+      dacl: '',
+    } as any);
+    setAddProfileOpen(false);
+    setNewProfileName('');
+  };
+
+  const handleAddDACL = () => {
+    if (!newDaclName.trim()) { toast.error('DACL name is required'); return; }
+    sim.addDACL({
+      name: newDaclName,
+      description: `Custom DACL - ${newDaclName}`,
+      content: newDaclContent,
+      ipVersion: 'IPv4',
+    } as any);
+    setAddDaclOpen(false);
+    setNewDaclName(''); setNewDaclContent('permit ip any any');
+  };
 
   return (
     <div className="flex">
@@ -66,9 +119,9 @@ const Policy = () => {
           <>
             <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Policy Sets</span></div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a policy set to view embedded Authentication and Authorization rules. In real ISE, auth/authz rules are inside each policy set.</div>
-            <div className="flex justify-end mb-2"><button data-walkthrough="add-policy-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>+ Add Policy Set</button></div>
+            <div className="flex justify-end mb-2"><button data-walkthrough="add-policy-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddPolicyOpen(true)}>+ Add Policy Set</button></div>
             <Table headers={['#', 'Status', 'Policy Set Name', 'Conditions', 'Allowed Protocols', 'Hits']}
-              rows={policySets.map(p => [
+              rows={sim.policySets.map(p => [
                 <span className="font-mono" style={{ color: '#999' }}>{p.id}</span>,
                 p.status === 'Enabled' ? <StatusBadge ok label="Enabled" /> : p.status === 'Monitor' ? <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#fbab18' }} /> Monitor</span> : <StatusBadge ok={false} label="Disabled" />,
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
@@ -76,9 +129,20 @@ const Policy = () => {
                 <span className="text-[11px]">{p.authPolicy}</span>,
                 <span className="text-right font-mono">{p.hits.toLocaleString()}</span>,
               ])}
-              onRowClick={(i) => { setSelectedPolicySet(policySets[i]); setPolicySetOpen(true); }}
+              onRowClick={(i) => { setSelectedPolicySet(sim.policySets[i]); setPolicySetOpen(true); }}
             />
             <PolicySetDetailDialog policySet={selectedPolicySet} open={policySetOpen} onOpenChange={setPolicySetOpen} />
+            {/* Add Policy Set Dialog */}
+            <Dialog open={addPolicyOpen} onOpenChange={setAddPolicyOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader><DialogTitle className="text-sm">Add Policy Set</DialogTitle></DialogHeader>
+                <div className="space-y-3 text-xs">
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Policy Set Name *</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newPolicyName} onChange={e => setNewPolicyName(e.target.value)} placeholder="e.g. Lab_Wired" /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Condition</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newPolicyCondition} onChange={e => setNewPolicyCondition(e.target.value)}><option>Wired_802.1X</option><option>Wireless_802.1X</option><option>Wired_MAB</option><option>Wireless_MAB</option><option>Guest_Flow</option><option>VPN_Access</option></select></div>
+                </div>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddPolicyOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={handleAddPolicySet}>Create</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         )}
 
@@ -99,16 +163,27 @@ const Policy = () => {
             <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Authorization Profiles</span></div><button data-walkthrough="add-profile-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>+ Add Profile</button></div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Results &gt; Authorization &gt; Authorization Profiles. Click a profile to view Common Tasks and RADIUS attributes.</div>
             <Table headers={['Name', 'Type', 'Description', 'Access Type', 'VLAN', 'DACL']}
-              rows={authorizationProfiles.map(p => [
+              rows={sim.authzProfiles.map(p => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
                 p.type, <span style={{ color: '#666' }}>{p.description}</span>,
                 <span className="font-mono">{p.accessType}</span>,
                 <span className="font-mono" style={{ color: '#888' }}>{p.vlan || '—'}</span>,
                 <span className="font-mono text-[11px]" style={{ color: '#888' }}>{p.dacl || '—'}</span>,
               ])}
-              onRowClick={(i) => { setSelectedProfile(authorizationProfiles[i]); setProfileOpen(true); }}
+              onRowClick={(i) => { setSelectedProfile(sim.authzProfiles[i]); setProfileOpen(true); }}
             />
             <AuthzProfileDetailDialog profile={selectedProfile} open={profileOpen} onOpenChange={setProfileOpen} />
+            {/* Add Profile Dialog */}
+            <Dialog open={addProfileOpen} onOpenChange={setAddProfileOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader><DialogTitle className="text-sm">Add Authorization Profile</DialogTitle></DialogHeader>
+                <div className="space-y-3 text-xs">
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Profile Name *</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="e.g. Lab_Permit" /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Access Type</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newProfileAccess} onChange={e => setNewProfileAccess(e.target.value)}><option>ACCESS_ACCEPT</option><option>ACCESS_REJECT</option></select></div>
+                </div>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddProfileOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={handleAddProfile}>Create</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         )}
 
@@ -117,15 +192,26 @@ const Policy = () => {
             <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Downloadable ACLs (DACLs)</span></div><button data-walkthrough="add-dacl-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>+ Add DACL</button></div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Results &gt; Authorization &gt; Downloadable ACLs. Click a DACL to edit Access Control Entries.</div>
             <Table headers={['DACL Name', 'IP Version', 'Description', 'ACE Lines']}
-              rows={downloadableACLs.map(d => [
+              rows={sim.dacls.map(d => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{d.name}</span>,
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#049fd920', color: '#049fd9' }}>{(d as any).ipVersion || 'IPv4'}</span>,
                 <span style={{ color: '#666' }}>{d.description}</span>,
                 <span className="font-mono">{d.content.split('\n').length}</span>,
               ])}
-              onRowClick={(i) => { setSelectedDACL(downloadableACLs[i]); setDaclOpen(true); }}
+              onRowClick={(i) => { setSelectedDACL(sim.dacls[i]); setDaclOpen(true); }}
             />
             <DACLEditorDialog dacl={selectedDACL} open={daclOpen} onOpenChange={setDaclOpen} />
+            {/* Add DACL Dialog */}
+            <Dialog open={addDaclOpen} onOpenChange={setAddDaclOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader><DialogTitle className="text-sm">Add Downloadable ACL</DialogTitle></DialogHeader>
+                <div className="space-y-3 text-xs">
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>DACL Name *</label><input className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card" value={newDaclName} onChange={e => setNewDaclName(e.target.value)} placeholder="e.g. ACL-LAB-PERMIT" /></div>
+                  <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>ACE Content</label><textarea className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card font-mono h-20" value={newDaclContent} onChange={e => setNewDaclContent(e.target.value)} /></div>
+                </div>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDaclOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={handleAddDACL}>Create</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         )}
 
@@ -150,7 +236,7 @@ const Policy = () => {
             <div className="flex items-center gap-2 mb-2"><FileText size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Library Conditions</span></div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Conditions &gt; Library Conditions. Click a condition to open the Condition Studio editor.</div>
             <Table headers={['Name', 'Type', 'Attribute', 'Operator', 'Value', 'Description']}
-              rows={policyConditions.map(c => [
+              rows={sim.conditions.map(c => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{c.name}</span>,
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: c.type === 'Compound' ? '#fbab18' + '30' : '#049fd9' + '20', color: c.type === 'Compound' ? '#b47a00' : '#049fd9' }}>{c.type}</span>,
                 <span className="font-mono text-[11px]">{c.attribute}</span>,
@@ -158,7 +244,7 @@ const Policy = () => {
                 <span className="font-mono">{c.value}</span>,
                 <span style={{ color: '#666' }}>{c.description}</span>,
               ])}
-              onRowClick={(i) => { setSelectedCondition(policyConditions[i]); setConditionOpen(true); }}
+              onRowClick={(i) => { setSelectedCondition(sim.conditions[i]); setConditionOpen(true); }}
             />
             <ConditionStudioDialog condition={selectedCondition} open={conditionOpen} onOpenChange={setConditionOpen} />
           </>
