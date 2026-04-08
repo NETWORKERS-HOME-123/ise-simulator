@@ -15,7 +15,7 @@ const Operations = () => {
   const [tab, setTab] = useState<Tab>('live-logs');
   const [logs, setLogs] = useState(() => generateRadiusLogs(30));
   const [sessions] = useState(() => generateLiveSessions(40));
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [tacacsLogs] = useState(() => generateTacacsLogs(25));
   const counterRef = useRef(31);
   const [traceInput, setTraceInput] = useState('');
   const [traceResults, setTraceResults] = useState<string[]>([]);
