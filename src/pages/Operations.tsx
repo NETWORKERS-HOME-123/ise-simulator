@@ -10,6 +10,13 @@ import LogDetailDialog from "@/components/LogDetailDialog";
 
 type Tab = 'live-logs' | 'live-sessions' | 'tacacs-logs' | 'troubleshoot' | 'reports' | 'anc' | 'system360' | 'message-codes';
 
+// Operations page structure mirrors real ISE 3.3:
+// RADIUS > Live Logs, RADIUS > Live Sessions
+// TACACS > Live Logs
+// Reports
+// Troubleshoot > Diagnostic Tools > General Tools
+// System 360, ANC, Message Codes
+
 const Operations = () => {
   const sim = useSimulation();
   const [tab, setTab] = useState<Tab>('live-logs');
@@ -92,12 +99,12 @@ const Operations = () => {
     return () => clearInterval(iv);
   }, [tcpDumpRunning]);
 
-  const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: 'live-logs', label: 'RADIUS Live Logs', icon: <Activity size={13} /> },
-    { key: 'tacacs-logs', label: 'TACACS+ Live Logs', icon: <Server size={13} /> },
-    { key: 'live-sessions', label: 'Live Sessions', icon: <Wifi size={13} /> },
-    { key: 'troubleshoot', label: 'Troubleshoot', icon: <Terminal size={13} /> },
+  const tabs: { key: Tab; label: string; icon: React.ReactNode; group?: string }[] = [
+    { key: 'live-logs', label: 'RADIUS > Live Logs', icon: <Activity size={13} />, group: 'RADIUS' },
+    { key: 'live-sessions', label: 'RADIUS > Live Sessions', icon: <Wifi size={13} />, group: 'RADIUS' },
+    { key: 'tacacs-logs', label: 'TACACS > Live Logs', icon: <Server size={13} />, group: 'TACACS' },
     { key: 'reports', label: 'Reports', icon: <FileBarChart size={13} /> },
+    { key: 'troubleshoot', label: 'Troubleshoot', icon: <Terminal size={13} /> },
     { key: 'anc', label: 'ANC', icon: <ShieldAlert size={13} /> },
     { key: 'system360', label: 'System 360', icon: <BarChart3 size={13} /> },
     { key: 'message-codes', label: 'Message Codes', icon: <BookOpen size={13} /> },
