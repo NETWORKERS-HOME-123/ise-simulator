@@ -1,222 +1,146 @@
 
 
-# Factual Accuracy Audit & Corrections Plan
+# Interactive Guided Walkthrough & Hands-On Lab Simulation
 
-## Research Sources Used
-- **Official**: Cisco ISE 3.3 Administrator Guide (all 16 chapters) — cisco.com/c/en/us/td/docs/security/ise/3-3/admin_guide/
-- **Chapters reviewed**: Overview, Licensing, Deployment, Basic Setup, Maintain & Monitor, Device Administration, Guest & Secure WiFi, Asset Visibility, BYOD, Secure Access, Segmentation, Compliance, Threat Containment, Cisco pxGrid, Integration, Troubleshoot
-- **Cross-referenced**: Network Device Definition Settings, RADIUS/TACACS/SNMP field tables, Authorization Profile Common Tasks, DACL configuration, Policy Set structure, Conditions Studio
+## Problem
 
----
+The current Lab Guide is a **passive checklist** — it shows instructions and validates completion, but:
+1. Students must manually find the right page, button, and fields
+2. No visual highlighting of what to click
+3. No auto-navigation — students get lost
+4. Labs validate state but don't guide the student through the actual UI interaction
+5. No real-time feedback during the process (only after clicking "Validate")
 
-## CRITICAL INACCURACIES FOUND
+## Solution
 
-### 1. Navigation Structure is Wrong
-
-**Real ISE 3.3 top navigation**: Home | Context Visibility | Operations | Policy | Administration | **Work Centers** (contains sub-menus)
-
-The current simulator has the correct top tabs. However, the **left navigation menus within each section** have significant structural errors:
-
-**Policy page — wrong structure:**
-- Current: Separate nav sections for "Authentication", "Authorization", "Policy Elements"
-- **Real ISE**: Policy > Policy Sets (clicking into a policy set reveals embedded Authentication and Authorization tables). There are NO separate "Authentication Policies" or "Authorization Policies" top-level nav items. The left nav is:
-  - Policy Sets
-  - Policy Elements > Results > Authorization > Authorization Profiles
-  - Policy Elements > Results > Authorization > Downloadable ACLs  
-  - Policy Elements > Conditions > Library Conditions
-  - Policy Elements > Dictionaries > System / User / RADIUS Vendor
-  - Policy Elements > Results > Authentication > Allowed Protocols
-  - Profiling > Profiling Policies
-  - Client Provisioning > Resources
-
-**Administration page — wrong hierarchy:**
-- Current: "System Configuration" with SMTP/NTP/ERS is a separate section
-- **Real ISE**: Administration left nav is:
-  - System > Deployment / Licensing / Certificates / Logging / Maintenance (Backup, Restore, Repository, Patch) / Settings
-  - Identity Management > Identity Source Sequences / Internal Users / External Identity Sources / Identity Groups / Settings
-  - Network Resources > Network Devices / Network Device Groups / External RADIUS Servers / RADIUS Server Sequences / NAC Managers / Network Device Profiles
-  - Device Administration > (link to Work Centers)
-  - pxGrid Services > (link to pxGrid)
-  - System > Admin Access > Administrators / Admin Groups / Authentication / Authorization
-  - System > Settings > SMTP Server / Repository / Alarm Settings / General / Proxy
-
-**Work Centers page — wrong sections:**
-- Current: Guest Access, BYOD, Device Administration, Posture, TrustSec, Network Access
-- **Real ISE Work Centers**: Each Work Center is its own sub-menu system:
-  - Network Access > Overview / Policy Sets / Ext RADIUS Servers / External ID Sources / Network Devices
-  - Guest Access > Overview / Portals & Components / Settings / Reports
-  - TrustSec > Overview / Components (SGTs, SGACLs, IP-SGT, SXP) / TrustSec Policy (Egress, Matrix) / Settings
-  - BYOD > Overview / Portals & Components / Settings
-  - Device Administration > Overview / Policy Sets / Policy Elements / Network Resources / Reports / Settings
-  - Posture > Overview / Policy Elements (Conditions, Requirements, Remediations) / Posture Policy / Client Provisioning / Settings
-
-### 2. Network Device Fields — Missing Official Fields
-
-Per Cisco documentation, the Network Device form has these exact fields the current `NetworkDeviceDetailDialog.tsx` may be missing or labeling incorrectly:
-- **General**: Name, Description, IP Address/IP Range (with exclude), Device Profile (vendor dropdown), Model Name, Software Version, Network Device Group (Location + IPSEC + Device Type)
-- **RADIUS**: Protocol, Shared Secret, Use Second Shared Secret, CoA Port (default from device profile), RADIUS DTLS (DTLS Required, Shared Secret, CoA Port, Issuer CA, DNS Name), Enable KeyWrap, Key Encryption Key, Message Authenticator Code Key, Key Input Format (ASCII/Hex)
-- **TACACS+**: Shared Secret, Retired Shared Secret, Retire button, Remaining Retired Period, Enable Single Connect Mode (Legacy/Draft Compliance)
-- **SNMP**: SNMP Version (1/2c/3), SNMP RO Community (v1/v2c), Username/Security Level/Auth Protocol/Auth Password/Privacy Protocol/Privacy Password (v3), Polling Interval, Link Trap Query, Mac Trap Query, Originating PSN
-
-### 3. Authorization Profile Common Tasks — Incomplete
-
-Per official doc, the Common Tasks section should include:
-- DACL Name (IPv4 checkbox + dropdown)
-- IPv6 DACL Name (separate checkbox)
-- ACL (Filter-ID) with IPv4/IPv6 variants
-- Airespace ACL Name / Airespace IPv6 ACL Name
-- VLAN (ID/Name with Tag)
-- Voice Domain Permission
-- Web Redirection (type: CWA/MDM/NSP/Client Provisioning + Static IP/FQDN + ACL + Portal)
-- Auto SmartPort
-- Access Type (ACCESS_ACCEPT)
-- Interface Template
-- ASA VPN
-- Reauthentication (Timer + Connectivity: Default/RADIUS-Request)
-- MACSec Policy
-- NEAT
-- Web Authentication (Local Web Auth)
-- Airespace Wireless Multicast
-- AVC Profile
-
-### 4. DACL Default Profiles Wrong
-
-Per official doc, default DACLs are:
-- DENY_ALL_IPV4_TRAFFIC
-- PERMIT_ALL_IPV4_TRAFFIC
-- DENY_ALL_IPV6_TRAFFIC
-- PERMIT_ALL_IPV6_TRAFFIC
-
-The current mock data may not match these exact names and the DACL editor should have an IP Version field (IPv4/IPv6/Agnostic) and a "Check DACL Syntax" button.
-
-### 5. Operations > Live Logs Structure Wrong
-
-Per official doc, the correct menu paths are:
-- Operations > RADIUS > Live Logs (not just "Live Logs")
-- Operations > RADIUS > Live Sessions
-- Operations > TACACS > Live Logs
-- Operations > Reports > (categories)
-- Operations > Troubleshoot > Diagnostic Tools > General Tools
-- Operations > Troubleshoot > Download Logs
-
-### 6. Policy Set Status Values Incomplete
-
-Per official documentation, Policy Set status can be:
-- **Enabled**: Active policy
-- **Disabled**: Inactive, will not be evaluated
-- **Monitor Only**: Evaluated but NOT enforced, results visible in Live Log
-
-The current simulator may be missing "Monitor Only" mode.
-
-### 7. Failure Reason Codes Non-Standard
-
-The current mock data uses failure reason codes like "24408 User not found" — these are close but need verification against official ISE message catalogs. Real ISE uses 5-digit message codes like:
-- 5400 Authentication failed
-- 5405 RADIUS Request dropped
-- 5440 Endpoint is not an active directory member
-- 22056 Subject not found in the applicable identity store(s)
-- 24408 is NOT a real ISE code
+Build a **walkthrough engine** that actively drives the student through each step: auto-navigates to the correct route, highlights the exact UI element (button/field/nav item), shows a tooltip with instructions, and auto-advances when the action is completed.
 
 ---
 
-## IMPLEMENTATION PLAN
+## Architecture
 
-### Phase 1: Fix Navigation Structure (Critical — Affects Training Muscle Memory)
+### New: Walkthrough Context (`src/context/WalkthroughContext.tsx`)
 
-**1a. Fix Policy Page Left Nav**
-- Remove separate "Authentication" and "Authorization" sections
-- Restructure to match real ISE:
+A global context that tracks:
+- `activeLabId` / `activeStepIndex` — which lab step is live
+- `walkthroughMode: boolean` — whether guided mode is active
+- `highlightTarget: string | null` — CSS selector or `data-walkthrough` ID of the element to highlight
+- `navigateTo: string | null` — route to auto-navigate to
+- `tooltipPosition` — where to show the instruction tooltip
+- `autoValidate: boolean` — watch simulation context and auto-advance on completion
 
-```text
-Policy Sets
-Policy Elements
-  ├── Results
-  │   ├── Authorization Profiles
-  │   ├── Downloadable ACLs
-  │   └── Allowed Protocols
-  ├── Conditions
-  │   ├── Library Conditions
-  │   └── Time & Date Conditions
-  └── Dictionaries
-      ├── System
-      ├── User
-      └── RADIUS Vendor
-Profiling
-  └── Profiling Policies
-Client Provisioning
-  └── Resources
+### New: Lab Step Metadata (extend `labDefinitions.ts`)
+
+Each step gets new fields:
+```typescript
+interface LabStep {
+  // existing
+  id: string;
+  title: string;
+  instruction: string;
+  hint: string;
+  validation: (ctx: any) => boolean;
+  // NEW
+  route: string;                    // e.g. "/administration"
+  navKey?: string;                  // left-nav item to auto-click, e.g. "network-devices"
+  highlightSelector: string;        // data-walkthrough="add-device-btn"
+  tooltipText: string;              // concise action: "Click this button to add a new switch"
+  formFields?: {                    // pre-fill hints shown inside form
+    fieldId: string;
+    value: string;
+    label: string;
+  }[];
+}
 ```
 
-**1b. Fix Administration Page Left Nav**
-- Restructure to match real ISE hierarchy with correct groupings
-- Move SMTP/NTP under System > Settings
-- Add Admin Access sub-section under System
-- Rename sections to match official labels exactly
+### New: Walkthrough Overlay (`src/components/WalkthroughOverlay.tsx`)
 
-**1c. Fix Work Centers Page Structure**
-- Each Work Center should mirror the real sub-nav (Overview / Policy Elements / Policy / Settings / Reports)
+A full-screen overlay component that:
+1. **Dims the entire page** except the highlighted element (spotlight effect using CSS `mix-blend-mode` or a mask)
+2. **Shows a tooltip/popover** anchored to the highlighted element with:
+   - Step number (e.g., "Step 1 of 4")
+   - Instruction text
+   - "Skip" and "Next" buttons
+   - For form steps: shows expected values as helper text
+3. **Pulses/glows** the target element with a CSS animation
+4. **Auto-advances** when `validation()` returns true (watches SimulationContext changes via useEffect)
 
-**1d. Fix Operations Page Tabs**
-- Change from flat tabs to proper structure: RADIUS > Live Logs, RADIUS > Live Sessions, TACACS > Live Logs, Reports, Troubleshoot
+### Modified: LabGuidePanel (`src/components/LabGuidePanel.tsx`)
 
-### Phase 2: Fix Field-Level Accuracy
+Add a "Start Guided Walkthrough" button per lab that:
+- Activates walkthrough mode
+- Navigates to the first step's route
+- Sets the first highlight target
 
-**2a. Network Device Detail Dialog**
-- Add missing fields: IP Range option, Device Profile vendor dropdown, Model Name, Software Version, Use Second Shared Secret, RADIUS DTLS section, KeyWrap settings, TACACS Retire mechanism, Enable Single Connect Mode, SNMP v3 full settings (Security Level, Auth/Privacy Protocol)
-- Fix field labels to match official documentation exactly
+Each step card also gets a "Go To This Step" button that navigates and highlights.
 
-**2b. Authorization Profile Dialog**
-- Add missing Common Tasks: ACL (Filter-ID) IPv4/IPv6, Airespace ACL, MACSec Policy, NEAT, Interface Template, ASA VPN, AVC Profile, Web Authentication
-- Add IPv6 DACL Name as separate option
-- Fix "Attributes Details" panel to show computed RADIUS AVPs dynamically
+### Modified: All pages & key components
 
-**2c. DACL Editor**
-- Add IP Version selector (IPv4/IPv6/Agnostic)
-- Fix default DACL names to exact Cisco names
-- Add "Check DACL Syntax" validation button
+Add `data-walkthrough` attributes to interactive elements:
+- `data-walkthrough="add-device-btn"` on Administration's "+ Add Device" button
+- `data-walkthrough="add-user-btn"` on Internal Users "+ Add User" button
+- `data-walkthrough="add-policy-btn"` on Policy Sets "+ Add Policy Set" button
+- `data-walkthrough="add-endpoint-btn"` on Context Visibility "+ Add Endpoint" button
+- `data-walkthrough="add-dacl-btn"` on DACLs "+ Add DACL" button
+- `data-walkthrough="add-sgt-btn"` on TrustSec "+ Add SGT" button
+- `data-walkthrough="add-profile-btn"` on Auth Profiles "+ Add Profile"
+- `data-walkthrough="run-auth-test"` on Troubleshoot "Run Test" button
+- `data-walkthrough="nav-{key}"` on left nav items
 
-**2d. Policy Set Detail Dialog**
-- Add "Monitor Only" status option
-- Fix authorization rule columns to show: Status, Rule Name, Conditions, Results (Profiles), Results (Security Groups), Hits, Actions
+### Redesigned Labs (Real Hands-On Scenarios)
 
-### Phase 3: Fix Mock Data Accuracy
+**Lab 1: 802.1X Wired Authentication (5 steps)**
+1. Navigate to Administration > Network Devices → highlight "Add Device" → student fills form with name="LAB-SW-01", IP="10.10.10.1" → validated when device appears in state
+2. Navigate to Administration > Internal Users → highlight "Add User" → student creates "labuser" in Employee group → validated
+3. Navigate to Policy > Policy Sets → highlight "Add Policy Set" → student creates "Lab_Wired" with condition "Wired_802.1X" → validated
+4. Navigate to Policy > Authorization Profiles → highlight "Add Profile" → student creates "Lab_Permit" with ACCESS_ACCEPT → validated
+5. Navigate to Operations > Troubleshoot → highlight auth test form → student enters username="labuser", NAS="10.10.10.1", clicks Run → validated when log appears
 
-**3a. Fix Failure Reason Codes**
-- Replace fake codes with real ISE message codes from the official message catalog
-- Key codes: 5400, 5405, 5412, 5434, 5440, 12002, 12013, 12014, 12015, 22028, 22040, 22056, 24408 (verify each)
+**Lab 2: Guest Access & ANC (4 steps)**
+1. Add guest user "guest_lab" in Guest group
+2. Navigate to Work Centers > Guest Access → view portal configuration
+3. Apply ANC-Quarantine to a MAC address in Operations > ANC
+4. Verify quarantined endpoint appears in Context Visibility
 
-**3b. Fix Default Profile/Policy Names**
-- Default DACLs: DENY_ALL_IPV4_TRAFFIC, PERMIT_ALL_IPV4_TRAFFIC, DENY_ALL_IPV6_TRAFFIC, PERMIT_ALL_IPV6_TRAFFIC
-- Default Authorization Profiles: PermitAccess, DenyAccess, Cisco_WebAuth, Blackhole_Wireless_Access
-- Default Policy Set: "Default" (always last, cannot be deleted)
+**Lab 3: TrustSec Segmentation (4 steps)**
+1. Create SGT "Lab_Servers" tag=50 in Work Centers > TrustSec
+2. Create DACL "ACL-LAB-PERMIT" in Policy > DACLs
+3. Create authorization profile "TrustSec_Lab" with DACL mapping
+4. Run auth test to verify SGT assignment in trace
 
-**3c. Fix Session ID Format**
-- Real ISE session IDs follow format: `0a{node_hex}:{port_hex}/{timestamp_hex}/session_seq` 
-- Current random format is not realistic
+**Lab 4: Certificate Management (3 steps)**
+1. View system certificates in Administration > Certificates
+2. Generate a CSR with CN="ise-lab.cisco.com"
+3. View trusted certificates store
+
+**Lab 5: Endpoint Lifecycle (4 steps)**
+1. Add endpoint MAC="AA:BB:CC:DD:EE:FF" in Context Visibility
+2. Right-click endpoint → Apply ANC Quarantine
+3. Verify in Operations > ANC that endpoint shows quarantined
+4. Delete the endpoint and verify removal
 
 ---
 
-## FILES TO MODIFY
+## File Summary
 
-| File | Changes |
-|------|---------|
-| `src/pages/Policy.tsx` | Restructure left nav sections to match real ISE; remove separate Auth/Authz sections |
-| `src/pages/Administration.tsx` | Restructure left nav; move SMTP/NTP under Settings; add Admin Access sub-section |
-| `src/pages/WorkCenters.tsx` | Restructure each Work Center with proper sub-nav matching real ISE |
-| `src/pages/Operations.tsx` | Restructure tabs to RADIUS/TACACS/Reports/Troubleshoot hierarchy |
-| `src/components/NetworkDeviceDetailDialog.tsx` | Add all missing fields per official documentation |
-| `src/components/AuthzProfileDetailDialog.tsx` | Add missing Common Tasks (ACL, Airespace, MACSec, NEAT, etc.) |
-| `src/components/DACLEditorDialog.tsx` | Add IP Version, fix defaults, add syntax check |
-| `src/components/PolicySetDetailDialog.tsx` | Add Monitor Only status, fix column structure |
-| `src/lib/mockData.ts` | Fix failure codes, session ID format, default names |
-| `src/lib/mockDataGap.ts` | Fix DACL defaults, add missing message codes |
-| `src/lib/authSimulator.ts` | Use correct ISE message codes in trace output |
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/context/WalkthroughContext.tsx` | Create | Global walkthrough state: active step, highlight target, auto-navigate |
+| `src/components/WalkthroughOverlay.tsx` | Create | Spotlight overlay with tooltip, pulse animation, auto-advance |
+| `src/lib/labDefinitions.ts` | Rewrite | Add route, navKey, highlightSelector, tooltipText, formFields to every step |
+| `src/components/LabGuidePanel.tsx` | Modify | Add "Start Guided Walkthrough" button, "Go To Step" per step |
+| `src/App.tsx` | Modify | Wrap with WalkthroughProvider, render WalkthroughOverlay |
+| `src/pages/Administration.tsx` | Modify | Add `data-walkthrough` attributes to buttons |
+| `src/pages/Policy.tsx` | Modify | Add `data-walkthrough` attributes to buttons |
+| `src/pages/Operations.tsx` | Modify | Add `data-walkthrough` attributes to test form |
+| `src/pages/ContextVisibility.tsx` | Modify | Add `data-walkthrough` attributes to buttons |
+| `src/pages/WorkCenters.tsx` | Modify | Add `data-walkthrough` attributes to buttons |
+| `src/components/CiscoHeader.tsx` | Modify | Add `data-walkthrough="nav-*"` to top nav tabs |
 
-## IMPLEMENTATION ORDER
-1. Navigation structure fixes (Policy, Administration, Work Centers, Operations)
-2. Network Device dialog field corrections
-3. Authorization Profile dialog field corrections
-4. DACL editor corrections
-5. Mock data accuracy (failure codes, session IDs, default names)
-6. Auth simulator trace output corrections
+## Implementation Order
+1. WalkthroughContext + WalkthroughOverlay (engine)
+2. Rewrite labDefinitions.ts with full step metadata
+3. Update LabGuidePanel with guided mode trigger
+4. Add data-walkthrough attributes across all pages
+5. Wire auto-navigation and auto-advance logic
 
