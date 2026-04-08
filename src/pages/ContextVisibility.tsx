@@ -73,7 +73,7 @@ const ContextVisibility = () => {
     <div className="p-4 space-y-3">
       <div className="text-xs" style={{ color: '#666' }}>Context Visibility &gt; <span className="font-semibold" style={{ color: '#333' }}>Endpoints</span></div>
 
-      <TableToolbar
+      <TableToolbar data-walkthrough="cv-search"
         search={search} onSearchChange={setSearch}
         totalCount={sim.endpoints.length} filteredCount={filtered.length}
         placeholder="Search MAC, IP, or Profile..."

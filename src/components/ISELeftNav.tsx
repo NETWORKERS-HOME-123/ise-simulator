@@ -45,6 +45,7 @@ const ISELeftNav = ({ sections, activeKey, onSelect }: ISELeftNavProps) => {
               {section.items.map(item => (
                 <button
                   key={item.key}
+                  data-walkthrough={`nav-${item.key}`}
                   className="w-full text-left px-5 py-1.5 text-xs transition-colors"
                   style={{
                     color: activeKey === item.key ? '#049fd9' : '#555',
