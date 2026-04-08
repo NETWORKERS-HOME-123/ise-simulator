@@ -23,6 +23,13 @@ export const generateEndpoints = (count: number) =>
     profile: profiles[Math.floor(Math.random() * profiles.length)],
     status: Math.random() > 0.15 ? 'Connected' : 'Disconnected',
     staticAssignment: Math.random() > 0.7,
+    firstSeen: new Date(Date.now() - Math.floor(Math.random() * 30 * 86400000)).toISOString(),
+    lastSeen: new Date(Date.now() - Math.floor(Math.random() * 3600000)).toISOString(),
+    location: ['Building A - Floor 1', 'Building A - Floor 2', 'Building B', 'Data Center', 'Remote VPN'][Math.floor(Math.random() * 5)],
+    nasPort: `GigabitEthernet1/0/${Math.floor(Math.random() * 48)}`,
+    authMethod: Math.random() > 0.5 ? '802.1X' : 'MAB',
+    os: ['Windows 10', 'macOS 14', 'iOS 17', 'Android 14', 'Linux', 'ChromeOS', 'Unknown'][Math.floor(Math.random() * 7)],
+    manufacturer: ['Dell', 'Apple', 'HP', 'Cisco', 'Samsung', 'Lenovo', 'Unknown'][Math.floor(Math.random() * 7)],
   }));
 
 export const generateRadiusLogs = (count: number) => {
@@ -40,6 +47,11 @@ export const generateRadiusLogs = (count: number) => {
       server: servers[Math.floor(Math.random() * servers.length)],
       nasIP: nasIPs[Math.floor(Math.random() * nasIPs.length)],
       authProtocol: Math.random() > 0.5 ? 'PEAP (EAP-MSCHAPv2)' : 'EAP-TLS',
+      policySet: ['Corporate_Wired', 'Corporate_Wireless', 'Guest_Portal', 'VPN_Remote'][Math.floor(Math.random() * 4)],
+      authzProfile: ['PermitAccess', 'DenyAccess', 'CWA_Redirect', 'BYOD_Access'][Math.floor(Math.random() * 4)],
+      nasPort: `GigabitEthernet1/0/${Math.floor(Math.random() * 48)}`,
+      sessionId: `0A0${Math.floor(Math.random() * 9)}${Math.random().toString(16).slice(2, 10).toUpperCase()}`,
+      failureReason: passed ? '' : ['24408 User not found', '22056 Subject not found in the applicable identity store(s)', '22028 Authentication failed - wrong password', '12514 EAP-TLS handshake failed'][Math.floor(Math.random() * 4)],
     };
   });
 };
@@ -59,6 +71,8 @@ export const generateLiveSessions = (count: number) => {
     started: new Date(now - Math.floor(Math.random() * 86400000)).toISOString(),
     duration: `${Math.floor(Math.random() * 24)}h ${Math.floor(Math.random() * 60)}m`,
     protocol: Math.random() > 0.5 ? 'RADIUS' : '802.1X',
+    postureStatus: ['Compliant', 'Non-Compliant', 'Unknown', 'Pending'][Math.floor(Math.random() * 4)],
+    securityGroup: ['Employees', 'Guests', 'BYOD_Devices', 'Contractors', 'IOT_Devices'][Math.floor(Math.random() * 5)],
   }));
 };
 
@@ -112,6 +126,7 @@ export const authorizationProfiles = [
   { id: 7, name: 'Limited_Access', type: 'Standard', description: 'Limited network scope for contractors', accessType: 'ACCESS_ACCEPT', vlan: 'Contractor_VLAN', dacl: 'ACL-CONTRACTOR-LIMITED' },
   { id: 8, name: 'Guest_Access', type: 'Standard', description: 'Internet-only guest access', accessType: 'ACCESS_ACCEPT', vlan: 'Guest_VLAN', dacl: 'ACL-GUEST-INTERNET' },
   { id: 9, name: 'Posture_Remediation', type: 'Standard', description: 'Remediation VLAN for non-compliant', accessType: 'ACCESS_ACCEPT', vlan: 'Remediation_VLAN', dacl: 'ACL-POSTURE-REMEDIATE' },
+  { id: 10, name: 'Blackhole_Stolen', type: 'Standard', description: 'Redirect to stolen device notification page', accessType: 'ACCESS_ACCEPT', vlan: 'Blackhole_VLAN', dacl: 'ACL-BLACKHOLE' },
 ];
 
 export const policyConditions = [
@@ -141,7 +156,9 @@ export const profilingPolicies = [
   { id: 5, name: 'Android', certainty: 20, matchedEndpoints: 312, conditions: 'DHCP:host-name CONTAINS android', parentPolicy: 'Android', status: 'Verified' },
   { id: 6, name: 'Cisco-Switch', certainty: 70, matchedEndpoints: 28, conditions: 'CDP OR LLDP protocol detected', parentPolicy: 'Cisco-Device', status: 'Verified' },
   { id: 7, name: 'Linux-Workstation', certainty: 20, matchedEndpoints: 78, conditions: 'DHCP class CONTAINS Linux', parentPolicy: 'Workstation', status: 'Verified' },
-  { id: 8, name: 'Unknown', certainty: 0, matchedEndpoints: 156, conditions: 'No match', parentPolicy: '', status: 'Unknown' },
+  { id: 8, name: 'Xerox-Printer', certainty: 50, matchedEndpoints: 12, conditions: 'OUI STARTS_WITH 00:00:AA', parentPolicy: 'Xerox-Device', status: 'Verified' },
+  { id: 9, name: 'Meraki-AP', certainty: 70, matchedEndpoints: 42, conditions: 'OUI STARTS_WITH 00:18:0A', parentPolicy: 'Cisco-Device', status: 'Verified' },
+  { id: 10, name: 'Unknown', certainty: 0, matchedEndpoints: 156, conditions: 'No match', parentPolicy: '', status: 'Unknown' },
 ];
 
 export const clientProvisioningResources = [
@@ -151,6 +168,7 @@ export const clientProvisioningResources = [
   { id: 4, name: 'Network Setup Assistant (iOS)', platform: 'iOS', type: 'NSA', version: '3.1.0', status: 'Active', lastUpdated: '2026-01-10' },
   { id: 5, name: 'Network Setup Assistant (Android)', platform: 'Android', type: 'NSA', version: '3.1.0', status: 'Active', lastUpdated: '2026-01-10' },
   { id: 6, name: 'Chromebook NSP', platform: 'ChromeOS', type: 'Native Supplicant Profile', version: '1.0', status: 'Active', lastUpdated: '2025-12-05' },
+  { id: 7, name: 'Windows Supplicant Provisioning Wizard', platform: 'Windows', type: 'SPW', version: '2.2.1', status: 'Active', lastUpdated: '2026-02-01' },
 ];
 
 export const deploymentNodes = [
@@ -161,9 +179,9 @@ export const deploymentNodes = [
 ];
 
 export const licenses = [
-  { id: 1, type: 'Base', total: 5000, consumed: 3247, status: 'Compliant', expiry: '2027-04-01', description: 'Basic network access and authentication' },
-  { id: 2, type: 'Plus', total: 2500, consumed: 1834, status: 'Compliant', expiry: '2027-04-01', description: 'Profiling and context visibility' },
-  { id: 3, type: 'Apex', total: 1000, consumed: 456, status: 'Compliant', expiry: '2027-04-01', description: 'Advanced posture and BYOD' },
+  { id: 1, type: 'Base', total: 5000, consumed: 3247, status: 'Compliant', expiry: '2027-04-01', description: 'Basic network access, authentication, 802.1X' },
+  { id: 2, type: 'Plus', total: 2500, consumed: 1834, status: 'Compliant', expiry: '2027-04-01', description: 'Profiling, context visibility, feed service' },
+  { id: 3, type: 'Apex', total: 1000, consumed: 456, status: 'Compliant', expiry: '2027-04-01', description: 'Posture, BYOD onboarding, TC-NAC' },
   { id: 4, type: 'Device Admin', total: 500, consumed: 128, status: 'Compliant', expiry: '2027-04-01', description: 'TACACS+ device administration' },
   { id: 5, type: 'ISE VM', total: 4, consumed: 4, status: 'At Limit', expiry: '2027-04-01', description: 'Virtual machine instance licenses' },
 ];
@@ -173,6 +191,7 @@ export const systemCertificates = [
   { id: 2, friendlyName: 'EAP Authentication Certificate', issuedTo: 'ise-psn01.corp.local', issuedBy: 'Corporate Root CA', validFrom: '2025-06-01', validTo: '2026-06-01', usedBy: 'EAP Authentication', status: 'Expiring Soon' },
   { id: 3, friendlyName: 'Portal Server Certificate', issuedTo: 'guest.corp.local', issuedBy: 'DigiCert SHA2 CA', validFrom: '2025-03-01', validTo: '2027-03-01', usedBy: 'Portal', status: 'Valid' },
   { id: 4, friendlyName: 'pxGrid Certificate', issuedTo: 'ise-pan01.corp.local', issuedBy: 'Corporate Root CA', validFrom: '2025-01-15', validTo: '2027-01-15', usedBy: 'pxGrid', status: 'Valid' },
+  { id: 5, friendlyName: 'SAML IdP Certificate', issuedTo: 'idp.corp.local', issuedBy: 'Corporate Root CA', validFrom: '2025-04-01', validTo: '2027-04-01', usedBy: 'SAML', status: 'Valid' },
 ];
 
 export const trustedCertificates = [
@@ -180,6 +199,8 @@ export const trustedCertificates = [
   { id: 2, friendlyName: 'DigiCert Global Root CA', subject: 'CN=DigiCert Global Root CA', issuedBy: 'Self', validTo: '2031-11-10', status: 'Enabled', trustedFor: 'Infrastructure, Cisco Services' },
   { id: 3, friendlyName: 'Cisco ISE Self-Signed CA', subject: 'CN=Cisco ISE CA', issuedBy: 'Self', validTo: '2033-01-01', status: 'Enabled', trustedFor: 'Infrastructure' },
   { id: 4, friendlyName: 'VeriSign Universal Root CA', subject: 'CN=VeriSign Universal Root CA', issuedBy: 'Self', validTo: '2037-12-01', status: 'Enabled', trustedFor: 'Infrastructure' },
+  { id: 5, friendlyName: 'Cisco Manufacturing CA', subject: 'CN=Cisco Manufacturing CA', issuedBy: 'Cisco Root CA 2048', validTo: '2029-05-14', status: 'Enabled', trustedFor: 'Cisco Services, Endpoints' },
+  { id: 6, friendlyName: 'Cisco Root CA 2048', subject: 'CN=Cisco Root CA 2048', issuedBy: 'Self', validTo: '2029-05-14', status: 'Enabled', trustedFor: 'Infrastructure, Cisco Services' },
 ];
 
 export const adminUsers = [
@@ -190,11 +211,128 @@ export const adminUsers = [
   { id: 5, name: 'isebackup', email: 'backup@corp.local', role: 'System Admin', status: 'Disabled', lastLogin: '2026-03-01 02:00:00', groups: 'System Admin' },
 ];
 
+// Network Devices for Administration > Network Resources
+export const networkDevices = [
+  { id: 1, name: 'SW-CORE-01', ip: '10.1.100.1', type: 'Cisco Catalyst 9300', location: 'Building A', ndg: 'All Device Types#Switch', profile: 'Cisco', status: 'Active', radiusSharedSecret: '●●●●●●●●', tacacs: true, snmpRO: 'public' },
+  { id: 2, name: 'SW-ACCESS-01', ip: '10.1.100.2', type: 'Cisco Catalyst 9200', location: 'Building A - Floor 1', ndg: 'All Device Types#Switch', profile: 'Cisco', status: 'Active', radiusSharedSecret: '●●●●●●●●', tacacs: true, snmpRO: 'public' },
+  { id: 3, name: 'WLC-01', ip: '10.2.200.1', type: 'Cisco 9800 WLC', location: 'Data Center', ndg: 'All Device Types#Wireless Controller', profile: 'Cisco', status: 'Active', radiusSharedSecret: '●●●●●●●●', tacacs: false, snmpRO: 'public' },
+  { id: 4, name: 'FW-EDGE-01', ip: '10.3.50.1', type: 'Cisco ASA 5525-X', location: 'Data Center', ndg: 'All Device Types#Firewall', profile: 'Cisco', status: 'Active', radiusSharedSecret: '●●●●●●●●', tacacs: false, snmpRO: 'ciscoRO' },
+  { id: 5, name: 'VPN-CONC-01', ip: '172.16.1.1', type: 'Cisco FTD 2110', location: 'DMZ', ndg: 'All Device Types#VPN', profile: 'Cisco', status: 'Active', radiusSharedSecret: '●●●●●●●●', tacacs: false, snmpRO: 'public' },
+  { id: 6, name: 'SW-ACCESS-02', ip: '10.1.100.3', type: 'Cisco Catalyst 3850', location: 'Building B', ndg: 'All Device Types#Switch', profile: 'Cisco', status: 'Active', radiusSharedSecret: '●●●●●●●●', tacacs: true, snmpRO: 'public' },
+  { id: 7, name: 'AP-BLDG-A-01', ip: '10.1.100.50', type: 'Cisco Aironet 3802i', location: 'Building A - Floor 1', ndg: 'All Device Types#Access Point', profile: 'Cisco', status: 'Active', radiusSharedSecret: '●●●●●●●●', tacacs: false, snmpRO: 'public' },
+];
+
+export const networkDeviceGroups = [
+  { id: 1, name: 'All Device Types', type: 'Device Type', children: ['Switch', 'Wireless Controller', 'Firewall', 'VPN', 'Access Point', 'Router'] },
+  { id: 2, name: 'All Locations', type: 'Location', children: ['Building A', 'Building B', 'Data Center', 'DMZ', 'Remote'] },
+  { id: 3, name: 'IPSEC', type: 'IPSEC', children: ['Yes', 'No'] },
+];
+
+// Identity Management
+export const internalUsers = [
+  { id: 1, name: 'jsmith', firstName: 'John', lastName: 'Smith', email: 'jsmith@corp.local', identityGroup: 'Employee', status: 'Enabled', lastPasswordChange: '2026-03-15' },
+  { id: 2, name: 'jdoe', firstName: 'Jane', lastName: 'Doe', email: 'jdoe@corp.local', identityGroup: 'Employee', status: 'Enabled', lastPasswordChange: '2026-03-20' },
+  { id: 3, name: 'mwilson', firstName: 'Mike', lastName: 'Wilson', email: 'mwilson@corp.local', identityGroup: 'Employee', status: 'Enabled', lastPasswordChange: '2026-02-28' },
+  { id: 4, name: 'agarcia', firstName: 'Ana', lastName: 'Garcia', email: 'agarcia@corp.local', identityGroup: 'Employee', status: 'Enabled', lastPasswordChange: '2026-03-01' },
+  { id: 5, name: 'bchen', firstName: 'Brian', lastName: 'Chen', email: 'bchen@corp.local', identityGroup: 'Employee', status: 'Enabled', lastPasswordChange: '2026-03-10' },
+  { id: 6, name: 'guest_user01', firstName: 'Guest', lastName: 'User', email: 'guest@corp.local', identityGroup: 'Guest', status: 'Enabled', lastPasswordChange: '2026-04-01' },
+  { id: 7, name: 'contractor_01', firstName: 'Contract', lastName: 'Worker', email: 'contractor@vendor.com', identityGroup: 'Contractor', status: 'Enabled', lastPasswordChange: '2026-03-25' },
+];
+
+export const identityGroupsList = [
+  { id: 1, name: 'Employee', description: 'Corporate employees with full access', members: 2847 },
+  { id: 2, name: 'Guest', description: 'Temporary guest users with internet-only access', members: 83 },
+  { id: 3, name: 'Contractor', description: 'External contractors with limited access', members: 45 },
+  { id: 4, name: 'BYOD', description: 'Bring Your Own Device registered endpoints', members: 312 },
+  { id: 5, name: 'IOT', description: 'Internet of Things devices', members: 189 },
+  { id: 6, name: 'Profiled', description: 'Automatically profiled devices', members: 567 },
+  { id: 7, name: 'Unknown', description: 'Unidentified endpoints', members: 156 },
+  { id: 8, name: 'Blacklist', description: 'Blocked/stolen devices', members: 3 },
+];
+
+export const externalIdentitySources = [
+  { id: 1, name: 'corp.local', type: 'Active Directory', status: 'Connected', joinPoint: 'ise-pan01.corp.local', domain: 'corp.local', users: 4521, groups: 87 },
+  { id: 2, name: 'LDAP-HQ', type: 'LDAP', status: 'Connected', joinPoint: 'ldap.corp.local:636', domain: 'dc=corp,dc=local', users: 4521, groups: 45 },
+  { id: 3, name: 'RSA-SecurID', type: 'RSA SecurID', status: 'Connected', joinPoint: '10.1.1.50', domain: '', users: 1200, groups: 0 },
+  { id: 4, name: 'SAML-Azure', type: 'SAML IdP', status: 'Active', joinPoint: 'login.microsoftonline.com', domain: 'corp.onmicrosoft.com', users: 0, groups: 0 },
+];
+
+// Reports data
+export const reportCategories = [
+  { name: 'Authentication Summary', description: 'Summary of RADIUS authentication activity', lastRun: '2026-04-08 09:00', records: 14523 },
+  { name: 'Top Authentications by User', description: 'Most active users by authentication count', lastRun: '2026-04-08 09:00', records: 250 },
+  { name: 'Failed Authentications', description: 'All failed RADIUS authentication attempts', lastRun: '2026-04-08 08:30', records: 342 },
+  { name: 'Endpoint Profiling', description: 'Endpoint profiler activity and changes', lastRun: '2026-04-08 07:00', records: 1892 },
+  { name: 'Guest Access', description: 'Guest portal usage and sponsor activity', lastRun: '2026-04-08 06:00', records: 83 },
+  { name: 'TACACS+ Accounting', description: 'Device administration session accounting', lastRun: '2026-04-07 23:00', records: 456 },
+  { name: 'Adaptive Network Control', description: 'ANC policy application and quarantine actions', lastRun: '2026-04-08 09:15', records: 12 },
+  { name: 'System Diagnostics', description: 'ISE node health and performance metrics', lastRun: '2026-04-08 09:10', records: 96 },
+  { name: 'Change Configuration Audit', description: 'Admin configuration change history', lastRun: '2026-04-08 08:55', records: 34 },
+  { name: 'Posture Assessment', description: 'Endpoint compliance check results', lastRun: '2026-04-08 08:00', records: 567 },
+];
+
+// ANC (Adaptive Network Control) endpoints
+export const ancEndpoints = [
+  { id: 1, mac: 'AA:BB:CC:11:22:33', ip: '10.1.50.101', policy: 'ANC-Quarantine', status: 'Quarantined', appliedBy: 'admin', appliedAt: '2026-04-08 08:30:00', reason: 'Suspicious activity detected' },
+  { id: 2, mac: 'DD:EE:FF:44:55:66', ip: '10.1.50.102', policy: 'ANC-Shutdown', status: 'Port Shutdown', appliedBy: 'admin', appliedAt: '2026-04-07 16:00:00', reason: 'Stolen device reported' },
+  { id: 3, mac: '11:22:33:AA:BB:CC', ip: '10.2.100.55', policy: 'ANC-Quarantine', status: 'Quarantined', appliedBy: 'netadmin', appliedAt: '2026-04-08 09:10:00', reason: 'Malware detected by endpoint protection' },
+];
+
 export const workCenterSections = [
   { id: 'guest', name: 'Guest Access', description: 'Configure guest portals, sponsor groups, and guest policies', icon: 'Users', subItems: ['Portals & Components', 'Settings', 'Reports'] },
   { id: 'byod', name: 'BYOD', description: 'Manage Bring Your Own Device onboarding and native supplicant provisioning', icon: 'Smartphone', subItems: ['BYOD Portal', 'My Devices Portal', 'Settings'] },
   { id: 'device-admin', name: 'Device Administration', description: 'TACACS+ device administration for network equipment', icon: 'Server', subItems: ['Device Admin Policy Sets', 'TACACS Profiles', 'TACACS Command Sets'] },
   { id: 'network-access', name: 'Network Access', description: 'Configure network access policies, policy sets, and conditions', icon: 'Network', subItems: ['Policy Sets', 'Authentication', 'Authorization'] },
   { id: 'posture', name: 'Posture', description: 'Endpoint compliance checks and remediation policies', icon: 'Shield', subItems: ['Posture Policy', 'Posture Elements', 'Client Provisioning'] },
-  { id: 'trustsec', name: 'TrustSec', description: 'Software-defined segmentation with Security Group Tags (SGTs)', icon: 'Lock', subItems: ['TrustSec Policy', 'Security Groups', 'IP-SGT Mapping'] },
+  { id: 'trustsec', name: 'TrustSec', description: 'Software-defined segmentation with Security Group Tags (SGTs)', icon: 'Lock', subItems: ['TrustSec Policy', 'Security Groups', 'IP-SGT Mapping', 'SXP Devices', 'Egress Policy'] },
+];
+
+// TACACS data
+export const tacacsProfiles = [
+  { id: 1, name: 'Shell_Admin', description: 'Full shell access with privilege 15', protocol: 'TACACS+', privilege: 15, status: 'Enabled' },
+  { id: 2, name: 'Shell_ReadOnly', description: 'Read-only shell access with privilege 1', protocol: 'TACACS+', privilege: 1, status: 'Enabled' },
+  { id: 3, name: 'Shell_Monitor', description: 'Show commands only with privilege 5', protocol: 'TACACS+', privilege: 5, status: 'Enabled' },
+];
+
+export const tacacsCommandSets = [
+  { id: 1, name: 'PermitAll', description: 'Permits all commands', commands: 'permit .* .*', status: 'Enabled' },
+  { id: 2, name: 'ShowOnly', description: 'Only show and display commands', commands: 'permit show .*, permit display .*', status: 'Enabled' },
+  { id: 3, name: 'DenyConfig', description: 'Deny all configuration commands', commands: 'deny configure .*', status: 'Enabled' },
+];
+
+// Security Groups (TrustSec)
+export const securityGroups = [
+  { id: 1, name: 'Employees', tag: 4, description: 'Corporate employees', icon: '🏢', learned: false },
+  { id: 2, name: 'Guests', tag: 6, description: 'Guest users', icon: '👤', learned: false },
+  { id: 3, name: 'BYOD_Devices', tag: 7, description: 'BYOD registered devices', icon: '📱', learned: false },
+  { id: 4, name: 'Contractors', tag: 8, description: 'External contractors', icon: '🔧', learned: false },
+  { id: 5, name: 'IOT_Devices', tag: 10, description: 'IoT devices', icon: '📡', learned: false },
+  { id: 6, name: 'Servers', tag: 11, description: 'Data center servers', icon: '🖥️', learned: false },
+  { id: 7, name: 'Network_Devices', tag: 2, description: 'Switches, routers, APs', icon: '🌐', learned: false },
+  { id: 8, name: 'TrustSec_Devices', tag: 3, description: 'TrustSec capable devices', icon: '🔒', learned: true },
+  { id: 9, name: 'VPN_Users', tag: 12, description: 'Remote VPN users', icon: '🔗', learned: false },
+  { id: 10, name: 'Quarantine', tag: 255, description: 'Quarantined endpoints', icon: '⚠️', learned: false },
+];
+
+// Posture policies
+export const posturePolicies = [
+  { id: 1, name: 'Windows_AV_Check', os: 'Windows All', condition: 'AntiVirus Installed AND AntiVirus Definition Date < 3 days', remediationAction: 'Windows_AV_Remediation', status: 'Enabled' },
+  { id: 2, name: 'Windows_Firewall', os: 'Windows All', condition: 'Windows Firewall Enabled', remediationAction: 'Enable_Firewall_Remediation', status: 'Enabled' },
+  { id: 3, name: 'macOS_FileVault', os: 'macOS All', condition: 'FileVault Encryption Enabled', remediationAction: 'macOS_Encryption_Remediation', status: 'Enabled' },
+  { id: 4, name: 'Windows_Patches', os: 'Windows 10/11', condition: 'Critical patches installed within 30 days', remediationAction: 'Windows_Update_Remediation', status: 'Enabled' },
+  { id: 5, name: 'USB_Storage', os: 'Windows All', condition: 'USB Mass Storage Disabled', remediationAction: 'USB_Block_Remediation', status: 'Disabled' },
+];
+
+// Guest portals
+export const guestPortals = [
+  { id: 1, name: 'Hotspot Portal', type: 'Hotspot', url: 'https://guest.corp.local:8443/hotspot', status: 'Active', theme: 'Default', authMethod: 'None (AUP only)' },
+  { id: 2, name: 'Sponsored Guest Portal', type: 'Sponsored', url: 'https://guest.corp.local:8443/sponsored', status: 'Active', theme: 'Corporate', authMethod: 'Sponsor Approval' },
+  { id: 3, name: 'Self-Registration Portal', type: 'Self-Registration', url: 'https://guest.corp.local:8443/self-reg', status: 'Active', theme: 'Corporate', authMethod: 'Self-Registration + SMS' },
+  { id: 4, name: 'BYOD Portal', type: 'BYOD', url: 'https://guest.corp.local:8443/byod', status: 'Active', theme: 'Corporate', authMethod: 'Employee Credentials' },
+];
+
+export const sponsorGroups = [
+  { id: 1, name: 'ALL_ACCOUNTS', description: 'Can create all guest account types', members: 15, guestTypes: ['Contractor', 'Daily', 'Weekly'] },
+  { id: 2, name: 'GROUP_ACCOUNTS', description: 'Can only create group guest accounts', members: 5, guestTypes: ['Daily', 'Weekly'] },
+  { id: 3, name: 'OWN_ACCOUNTS', description: 'Can only manage own guest accounts', members: 45, guestTypes: ['Daily'] },
 ];
