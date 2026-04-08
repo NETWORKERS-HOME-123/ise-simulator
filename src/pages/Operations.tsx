@@ -99,7 +99,7 @@ const Operations = () => {
     return () => clearInterval(iv);
   }, [tcpDumpRunning]);
 
-  const tabs: { key: Tab; label: string; icon: React.ReactNode; group?: string }[] = [
+  const tabs: { key: Tab; label: string; icon: React.ReactNode; group?: string; wt?: string }[] = [
     { key: 'live-logs', label: 'RADIUS > Live Logs', icon: <Activity size={13} />, group: 'RADIUS' },
     { key: 'live-sessions', label: 'RADIUS > Live Sessions', icon: <Wifi size={13} />, group: 'RADIUS' },
     { key: 'tacacs-logs', label: 'TACACS > Live Logs', icon: <Server size={13} />, group: 'TACACS' },
