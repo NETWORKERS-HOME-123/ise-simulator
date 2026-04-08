@@ -42,45 +42,82 @@ const AuthzProfileDetailDialog = ({ profile, open, onOpenChange }: AuthzProfileD
           {(['common', 'advanced', 'attributes'] as const).map(t => (
             <button key={t} className="px-4 py-1.5 text-xs font-medium border-b-2 transition-colors capitalize"
               style={{ color: activeTab === t ? '#049fd9' : '#666', borderBottomColor: activeTab === t ? '#049fd9' : 'transparent' }}
-              onClick={() => setActiveTab(t)}>{t === 'common' ? 'Common Tasks' : t === 'advanced' ? 'Advanced' : 'Attributes Details'}</button>
+              onClick={() => setActiveTab(t)}>{t === 'common' ? 'Common Tasks' : t === 'advanced' ? 'Advanced Attributes Settings' : 'Attributes Details'}</button>
           ))}
         </div>
 
         {activeTab === 'common' && details && (
           <div className="border border-border rounded p-3 bg-card text-xs space-y-3">
-            <ToggleRow label="DACL Name" value={details.dacl || 'None'} enabled={!!details.dacl} />
-            <ToggleRow label="VLAN ID/Name" value={details.vlan || 'None'} enabled={!!details.vlan} />
+            <SectionTitle>Access Control Lists</SectionTitle>
+            <ToggleRow label="DACL Name" value={details.dacl || 'None'} enabled={!!details.dacl} selectOptions={['PERMIT_ALL_IPV4_TRAFFIC', 'DENY_ALL_IPV4_TRAFFIC', 'ACL-WEBAUTH-REDIRECT', 'ACL-IOT-RESTRICT', 'ACL-CONTRACTOR-LIMITED', 'ACL-GUEST-INTERNET']} />
+            <ToggleRow label="IPv6 DACL Name" value="None" enabled={false} selectOptions={['PERMIT_ALL_IPV6_TRAFFIC', 'DENY_ALL_IPV6_TRAFFIC']} />
+            <ToggleRow label="ACL (Filter-ID)" value="None" enabled={false} />
+            <ToggleRow label="IPv6 ACL (Filter-ID)" value="None" enabled={false} />
+            
+            <SectionTitle>Wireless</SectionTitle>
+            <ToggleRow label="Airespace ACL Name" value={details.airespacACL || 'None'} enabled={!!details.airespacACL} />
+            <ToggleRow label="Airespace IPv6 ACL Name" value="None" enabled={false} />
+            <ToggleRow label="Airespace Wireless Multicast" value="Disabled" enabled={false} />
+            
+            <SectionTitle>VLAN / Voice</SectionTitle>
+            <ToggleRow label="VLAN (ID/Name)" value={details.vlan || 'None'} enabled={!!details.vlan} />
             <ToggleRow label="Voice Domain Permission" value={details.voiceDomainPermission ? 'Enabled' : 'Disabled'} enabled={details.voiceDomainPermission} />
+            
             {details.webRedirection && (
-              <div className="border-t border-border pt-2 space-y-2">
-                <div className="font-semibold" style={{ color: '#333' }}>Web Redirection</div>
+              <>
+                <SectionTitle>Web Redirection (CWA, MDM, NSP, CPP)</SectionTitle>
                 <Row label="Type" value={details.webRedirection.type} />
                 <Row label="ACL" value={details.webRedirection.acl} mono />
                 <Row label="Portal" value={details.webRedirection.portal} />
+                <ToggleRow label="Static IP/Host Name/FQDN" value="Use PSN FQDN" enabled={false} />
+              </>
+            )}
+            
+            <SectionTitle>Reauthentication</SectionTitle>
+            <ToggleRow label="Reauthentication" value={details.reauthTimer ? `${details.reauthTimer} seconds` : 'Disabled'} enabled={!!details.reauthTimer} />
+            {details.reauthTimer > 0 && (
+              <div className="flex items-center text-xs gap-2 ml-4">
+                <span className="w-40 font-medium shrink-0" style={{ color: '#555' }}>Maintain Connectivity During Reauthentication</span>
+                <select className="border border-border rounded px-2 py-0.5 text-xs bg-card">
+                  <option value="default">Default</option>
+                  <option value="radius">RADIUS-Request</option>
+                </select>
               </div>
             )}
-            <div className="border-t border-border pt-2 space-y-2">
-              <Row label="Reauthentication Timer" value={details.reauthTimer ? `${details.reauthTimer} seconds` : 'Disabled'} mono />
-              <ToggleRow label="Maintain Connectivity" value={details.maintainConnectivity ? 'During Reauth' : 'No'} enabled={details.maintainConnectivity} />
-            </div>
-            {details.autoSmartPort && <Row label="Auto SmartPort" value={details.autoSmartPort} />}
+            
+            <SectionTitle>Security</SectionTitle>
+            <ToggleRow label="MACSec Policy" value="None" enabled={false} selectOptions={['None', 'must-secure', 'should-secure', 'must-not-secure']} />
+            <ToggleRow label="NEAT" value="Disabled" enabled={false} />
+            
+            <SectionTitle>Other</SectionTitle>
+            <ToggleRow label="Auto SmartPort" value={details.autoSmartPort || 'None'} enabled={!!details.autoSmartPort} />
+            <ToggleRow label="Web Authentication (Local Web Auth)" value="Disabled" enabled={false} />
             {details.asaVpn && <Row label="ASA VPN" value={details.asaVpn} />}
-            {details.airespacACL && <Row label="Airespace ACL" value={details.airespacACL} />}
           </div>
         )}
 
         {activeTab === 'advanced' && (
           <div className="border border-border rounded p-3 bg-card text-xs space-y-2">
+            <SectionTitle>Advanced Settings</SectionTitle>
             <Row label="Interface Template" value={details?.interfaceTemplate || 'None'} />
             <Row label="AVC Profile" value={details?.avcProfile || 'None'} />
             <Row label="Auto SmartPort" value={details?.autoSmartPort || 'None'} />
             <Row label="ASA VPN Group Policy" value={details?.asaVpn || 'None'} />
             <Row label="Airespace ACL" value={details?.airespacACL || 'None'} />
+            
+            <SectionTitle>RADIUS Overrides</SectionTitle>
+            <Row label="Service-Type Override" value="None" />
+            <Row label="Framed-Protocol Override" value="None" />
+            <Row label="Framed-IP-Address" value="None" />
+            <Row label="Framed-IP-Netmask" value="None" />
           </div>
         )}
 
         {activeTab === 'attributes' && details && (
           <div className="border border-border rounded overflow-auto bg-card">
+            <div className="p-2 text-[10px] border-b border-border" style={{ background: '#f8f8f8', color: '#888' }}>
+              These RADIUS Attribute-Value Pairs are automatically computed based on the Common Tasks and Advanced settings configured above.
+            </div>
             <table className="w-full text-[11px]">
               <thead><tr style={{ background: '#f0f0f0' }}>
                 <th className="text-left p-2 font-semibold" style={{ color: '#555' }}>Attribute</th>
@@ -113,6 +150,10 @@ const AuthzProfileDetailDialog = ({ profile, open, onOpenChange }: AuthzProfileD
   );
 };
 
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <div className="text-[11px] font-bold pt-2 pb-1 border-b border-border" style={{ color: '#333' }}>{children}</div>
+);
+
 const Row = ({ label, value, mono }: { label: string; value: string; mono?: boolean }) => (
   <div className="flex items-center text-xs">
     <span className="w-44 font-medium shrink-0" style={{ color: '#555' }}>{label}</span>
@@ -120,11 +161,17 @@ const Row = ({ label, value, mono }: { label: string; value: string; mono?: bool
   </div>
 );
 
-const ToggleRow = ({ label, value, enabled }: { label: string; value: string; enabled: boolean }) => (
+const ToggleRow = ({ label, value, enabled, selectOptions }: { label: string; value: string; enabled: boolean; selectOptions?: string[] }) => (
   <div className="flex items-center text-xs gap-2">
     <Switch defaultChecked={enabled} className="scale-75" />
     <span className="w-40 font-medium shrink-0" style={{ color: '#555' }}>{label}</span>
-    <span className="font-mono" style={{ color: '#333' }}>{value}</span>
+    {selectOptions ? (
+      <select className="border border-border rounded px-2 py-0.5 text-xs bg-card font-mono" defaultValue={value}>
+        {selectOptions.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+    ) : (
+      <span className="font-mono" style={{ color: '#333' }}>{value}</span>
+    )}
   </div>
 );
 
