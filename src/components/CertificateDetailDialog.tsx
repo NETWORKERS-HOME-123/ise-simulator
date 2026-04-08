@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { certificatePEMData } from "@/lib/mockDataExtended";
+import { toast } from "sonner";
 
 interface CertificateDetailDialogProps {
   certificate: { id: number; friendlyName: string; issuedTo: string; issuedBy: string; validFrom: string; validTo: string; usedBy: string; status: string } | null;
@@ -11,6 +12,21 @@ interface CertificateDetailDialogProps {
 const CertificateDetailDialog = ({ certificate, open, onOpenChange }: CertificateDetailDialogProps) => {
   if (!certificate) return null;
   const pem = certificatePEMData[certificate.friendlyName];
+
+  const handleRenew = () => {
+    toast.success(`Certificate "${certificate.friendlyName}" renewal initiated`);
+    onOpenChange(false);
+  };
+
+  const handleDelete = () => {
+    toast.error(`Certificate "${certificate.friendlyName}" deleted`);
+    onOpenChange(false);
+  };
+
+  const handleExport = () => {
+    toast.success(`Certificate "${certificate.friendlyName}" exported to file`);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -51,9 +67,9 @@ const CertificateDetailDialog = ({ certificate, open, onOpenChange }: Certificat
         )}
 
         <DialogFooter className="gap-2 mt-3">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Export</Button>
-          <Button variant="outline" size="sm" style={{ color: '#cc0000', borderColor: '#cc0000' }} onClick={() => onOpenChange(false)}>Delete</Button>
-          <Button size="sm" style={{ background: '#049fd9' }} onClick={() => onOpenChange(false)}>Renew</Button>
+          <Button variant="outline" size="sm" onClick={handleExport}>Export</Button>
+          <Button variant="outline" size="sm" style={{ color: '#cc0000', borderColor: '#cc0000' }} onClick={handleDelete}>Delete</Button>
+          <Button size="sm" style={{ background: '#049fd9' }} onClick={handleRenew}>Renew</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

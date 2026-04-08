@@ -12,6 +12,7 @@ import { Server, CheckCircle, XCircle, Key, Shield, Users, Settings, ToggleLeft,
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const sections: NavSection[] = [
   { label: 'System', items: [
@@ -349,7 +350,7 @@ const Administration = () => {
                 </div>
               </div>
             )}
-            <div className="flex justify-end mt-3"><Button size="sm" style={{ background: '#049fd9' }}>Save Settings</Button></div>
+            <div className="flex justify-end mt-3"><Button size="sm" style={{ background: '#049fd9' }} onClick={() => toast.success("System settings saved successfully")}>Save Settings</Button></div>
           </>
         )}
 
@@ -385,7 +386,7 @@ const Administration = () => {
                     <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Location</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card"><option>Building A</option><option>Building B</option><option>Data Center</option><option>DMZ</option></select></div>
                   </div>
                 </div>
-                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDeviceOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => setAddDeviceOpen(false)}>Save</Button></DialogFooter>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddDeviceOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => { toast.success("Network device added successfully"); setAddDeviceOpen(false); }}>Save</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           </>
@@ -473,7 +474,7 @@ const Administration = () => {
                   ))}
                   <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Identity Group</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card">{identityGroupsList.map(g => <option key={g.id}>{g.name}</option>)}</select></div>
                 </div>
-                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddUserOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => setAddUserOpen(false)}>Create</Button></DialogFooter>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddUserOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => { toast.success("Internal user created successfully"); setAddUserOpen(false); }}>Create</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           </>
@@ -628,18 +629,52 @@ const Administration = () => {
   );
 };
 
-const ISETable = ({ headers, rows, onRowClick }: { headers: string[]; rows: React.ReactNode[][]; onRowClick?: (i: number) => void }) => (
-  <div className="border border-border rounded overflow-auto bg-card">
-    <table className="w-full text-xs">
-      <thead><tr style={{ background: '#f0f0f0' }}>{headers.map(h => <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>)}</tr></thead>
-      <tbody>{rows.map((row, i) => (
-        <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className={`hover:bg-accent/60 ${onRowClick ? 'cursor-pointer' : ''}`} onClick={() => onRowClick?.(i)}>
-          {row.map((cell, j) => <td key={j} className="p-2">{cell}</td>)}
-        </tr>
-      ))}</tbody>
-    </table>
-  </div>
-);
+const ISETable = ({ headers, rows, onRowClick }: { headers: string[]; rows: React.ReactNode[][]; onRowClick?: (i: number) => void }) => {
+  const [editCell, setEditCell] = useState<{ row: number; col: number } | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  const handleDoubleClick = (rowIdx: number, colIdx: number, cellContent: React.ReactNode) => {
+    const text = typeof cellContent === 'string' ? cellContent : '';
+    if (!text && typeof cellContent !== 'string') return;
+    setEditCell({ row: rowIdx, col: colIdx });
+    setEditValue(text);
+  };
+
+  const handleEditDone = () => {
+    if (editCell) {
+      toast.success(`Cell updated`);
+    }
+    setEditCell(null);
+  };
+
+  return (
+    <div className="border border-border rounded overflow-auto bg-card">
+      <table className="w-full text-xs">
+        <thead><tr style={{ background: '#f0f0f0' }}>{headers.map(h => <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>)}</tr></thead>
+        <tbody>{rows.map((row, i) => (
+          <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className={`hover:bg-accent/60 ${onRowClick ? 'cursor-pointer' : ''}`} onClick={() => onRowClick?.(i)}>
+            {row.map((cell, j) => (
+              <td key={j} className="p-2" onDoubleClick={(e) => { e.stopPropagation(); handleDoubleClick(i, j, cell); }}>
+                {editCell?.row === i && editCell?.col === j ? (
+                  <input
+                    className="border border-primary rounded px-1 py-0.5 text-xs bg-background w-full"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={handleEditDone}
+                    onKeyDown={(e) => e.key === 'Enter' && handleEditDone()}
+                    autoFocus
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : cell}
+              </td>
+            ))}
+          </tr>
+        ))}</tbody>
+      </table>
+      <div className="text-[9px] px-2 py-1 border-t border-border" style={{ color: '#aaa' }}>Double-click a cell to edit inline</div>
+    </div>
+  );
+};
 
 const SettingRow = ({ label, value, mono }: { label: string; value: string; mono?: boolean }) => (
   <div className="flex items-center"><span className="w-52 font-medium" style={{ color: '#555' }}>{label}</span><span className={mono ? 'font-mono' : ''} style={{ color: '#333' }}>{value}</span></div>

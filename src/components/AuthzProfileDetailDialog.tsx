@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { authzProfileDetails } from "@/lib/mockDataExtended";
+import { toast } from "sonner";
 
 interface AuthzProfileDetailDialogProps {
   profile: { id: number; name: string; type: string; description: string; accessType: string; vlan: string; dacl: string } | null;
@@ -16,6 +17,11 @@ const AuthzProfileDetailDialog = ({ profile, open, onOpenChange }: AuthzProfileD
 
   const details = authzProfileDetails[profile.name];
 
+  const handleSave = () => {
+    toast.success(`Authorization profile "${profile.name}" saved successfully`);
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
@@ -25,7 +31,6 @@ const AuthzProfileDetailDialog = ({ profile, open, onOpenChange }: AuthzProfileD
           </DialogTitle>
         </DialogHeader>
 
-        {/* General Info */}
         <div className="border border-border rounded p-3 bg-card text-xs space-y-2">
           <Row label="Name" value={profile.name} />
           <Row label="Description" value={profile.description} />
@@ -33,7 +38,6 @@ const AuthzProfileDetailDialog = ({ profile, open, onOpenChange }: AuthzProfileD
           <Row label="Profile Type" value={profile.type} />
         </div>
 
-        {/* Tabs */}
         <div className="flex border-b border-border mt-3">
           {(['common', 'advanced', 'attributes'] as const).map(t => (
             <button key={t} className="px-4 py-1.5 text-xs font-medium border-b-2 transition-colors capitalize"
@@ -101,8 +105,8 @@ const AuthzProfileDetailDialog = ({ profile, open, onOpenChange }: AuthzProfileD
         )}
 
         <DialogFooter className="gap-2 mt-3">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" style={{ background: '#049fd9' }} onClick={() => onOpenChange(false)}>Save</Button>
+          <Button variant="outline" size="sm" onClick={() => { toast("Changes discarded"); onOpenChange(false); }}>Cancel</Button>
+          <Button size="sm" style={{ background: '#049fd9' }} onClick={handleSave}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
