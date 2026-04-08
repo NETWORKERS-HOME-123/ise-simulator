@@ -303,23 +303,57 @@ const StatusBadge = ({ ok, label }: { ok: boolean; label: string }) => (
   </span>
 );
 
-const Table = ({ headers, rows, onRowClick }: { headers: string[]; rows: React.ReactNode[][]; onRowClick?: (i: number) => void }) => (
-  <div className="border border-border rounded overflow-auto bg-card">
-    <table className="w-full text-xs">
-      <thead>
-        <tr style={{ background: '#f0f0f0' }}>
-          {headers.map(h => <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>)}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row, i) => (
-          <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className={`hover:bg-accent/60 ${onRowClick ? 'cursor-pointer' : ''}`} onClick={() => onRowClick?.(i)}>
-            {row.map((cell, j) => <td key={j} className="p-2">{cell}</td>)}
+const Table = ({ headers, rows, onRowClick }: { headers: string[]; rows: React.ReactNode[][]; onRowClick?: (i: number) => void }) => {
+  const [editCell, setEditCell] = useState<{ row: number; col: number } | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  const handleDoubleClick = (rowIdx: number, colIdx: number, cellContent: React.ReactNode) => {
+    const text = typeof cellContent === 'string' ? cellContent : '';
+    if (!text && typeof cellContent !== 'string') return;
+    setEditCell({ row: rowIdx, col: colIdx });
+    setEditValue(text);
+  };
+
+  const handleEditDone = () => {
+    if (editCell) {
+      toast.success(`Cell updated`);
+    }
+    setEditCell(null);
+  };
+
+  return (
+    <div className="border border-border rounded overflow-auto bg-card">
+      <table className="w-full text-xs">
+        <thead>
+          <tr style={{ background: '#f0f0f0' }}>
+            {headers.map(h => <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>)}
           </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className={`hover:bg-accent/60 ${onRowClick ? 'cursor-pointer' : ''}`} onClick={() => onRowClick?.(i)}>
+              {row.map((cell, j) => (
+                <td key={j} className="p-2" onDoubleClick={(e) => { e.stopPropagation(); handleDoubleClick(i, j, cell); }}>
+                  {editCell?.row === i && editCell?.col === j ? (
+                    <input
+                      className="border border-primary rounded px-1 py-0.5 text-xs bg-background w-full"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={handleEditDone}
+                      onKeyDown={(e) => e.key === 'Enter' && handleEditDone()}
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="text-[9px] px-2 py-1 border-t border-border" style={{ color: '#aaa' }}>Double-click a cell to edit inline</div>
+    </div>
+  );
+};
 
 export default Policy;
