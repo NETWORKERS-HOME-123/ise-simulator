@@ -474,7 +474,7 @@ const Administration = () => {
                   ))}
                   <div><label className="block mb-1 font-medium" style={{ color: '#555' }}>Identity Group</label><select className="w-full border border-border rounded px-2 py-1.5 text-xs bg-card">{identityGroupsList.map(g => <option key={g.id}>{g.name}</option>)}</select></div>
                 </div>
-                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddUserOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => setAddUserOpen(false)}>Create</Button></DialogFooter>
+                <DialogFooter className="gap-2"><Button variant="outline" size="sm" onClick={() => setAddUserOpen(false)}>Cancel</Button><Button size="sm" style={{ background: '#049fd9' }} onClick={() => { toast.success("Internal user created successfully"); setAddUserOpen(false); }}>Create</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           </>
