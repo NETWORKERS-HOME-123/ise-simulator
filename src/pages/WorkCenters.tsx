@@ -2,7 +2,13 @@ import { useState } from "react";
 import ISELeftNav, { NavSection } from "@/components/ISELeftNav";
 import { Users, Smartphone, Server, Wifi, Shield, Lock } from "lucide-react";
 import { workCenterSections, guestPortals, sponsorGroups, tacacsProfiles, tacacsCommandSets, securityGroups, posturePolicies, clientProvisioningResources, policySets } from "@/lib/mockData";
+import { postureConditions, postureRequirements, postureRemediations, guestTypeDetails, shellProfileDetails, commandSetDetails, sxpDevices } from "@/lib/mockDataGap";
 import { CheckCircle, XCircle } from "lucide-react";
+import PostureConditionDialog from "@/components/PostureConditionDialog";
+import GuestTypeDetailDialog from "@/components/GuestTypeDetailDialog";
+import ShellProfileDialog from "@/components/ShellProfileDialog";
+import CommandSetDialog from "@/components/CommandSetDialog";
+import SXPDeviceDialog from "@/components/SXPDeviceDialog";
 
 const sections: NavSection[] = [
   { label: 'Guest Access', items: [
@@ -25,6 +31,9 @@ const sections: NavSection[] = [
   { label: 'Posture', items: [
     { label: 'Overview', key: 'posture-overview' },
     { label: 'Posture Policy', key: 'posture-policy' },
+    { label: 'Posture Conditions', key: 'posture-conditions' },
+    { label: 'Posture Requirements', key: 'posture-requirements' },
+    { label: 'Remediation Actions', key: 'posture-remediation' },
     { label: 'Client Provisioning', key: 'posture-provisioning' },
   ], defaultOpen: false },
   { label: 'TrustSec', items: [
@@ -32,6 +41,7 @@ const sections: NavSection[] = [
     { label: 'Security Groups (SGTs)', key: 'security-groups' },
     { label: 'TrustSec Policy', key: 'trustsec-policy' },
     { label: 'IP-SGT Mapping', key: 'ip-sgt' },
+    { label: 'SXP Devices', key: 'sxp-devices' },
   ], defaultOpen: false },
   { label: 'Network Access', items: [
     { label: 'Overview', key: 'netaccess-overview' },
@@ -41,6 +51,16 @@ const sections: NavSection[] = [
 
 const WorkCenters = () => {
   const [active, setActive] = useState('guest-overview');
+  const [selectedCondition, setSelectedCondition] = useState<typeof postureConditions[0] | null>(null);
+  const [conditionOpen, setConditionOpen] = useState(false);
+  const [selectedGuestType, setSelectedGuestType] = useState<string | null>(null);
+  const [guestTypeOpen, setGuestTypeOpen] = useState(false);
+  const [selectedShellProfile, setSelectedShellProfile] = useState<string | null>(null);
+  const [shellProfileOpen, setShellProfileOpen] = useState(false);
+  const [selectedCommandSet, setSelectedCommandSet] = useState<string | null>(null);
+  const [commandSetOpen, setCommandSetOpen] = useState(false);
+  const [selectedSXP, setSelectedSXP] = useState<typeof sxpDevices[0] | null>(null);
+  const [sxpOpen, setSxpOpen] = useState(false);
 
   const getSectionLabel = () => {
     const section = sections.find(s => s.items.some(i => i.key === active));
@@ -49,13 +69,15 @@ const WorkCenters = () => {
   };
   const { section: secLabel, item: itemLabel } = getSectionLabel();
 
+  const guestTypes = ['Contractor', 'Daily', 'Weekly', 'Self-Registration', 'Hotspot'];
+
   return (
     <div className="flex">
       <ISELeftNav sections={sections} activeKey={active} onSelect={setActive} />
       <div className="flex-1 p-4 space-y-3 overflow-auto">
         <div className="text-xs" style={{ color: '#666' }}>Work Centers &gt; {secLabel} &gt; <span className="font-semibold" style={{ color: '#333' }}>{itemLabel}</span></div>
 
-        {/* Guest Access Overview */}
+        {/* ========== GUEST ACCESS ========== */}
         {active === 'guest-overview' && (
           <div className="space-y-4">
             <div className="flex items-center gap-2"><Users size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Guest Access</span></div>
@@ -64,9 +86,7 @@ const WorkCenters = () => {
               <StatCard label="Guest Portals" value={String(guestPortals.length)} color="#049fd9" />
               <StatCard label="Sponsor Groups" value={String(sponsorGroups.length)} color="#fbab18" />
             </div>
-            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>
-              Guest Access provides secure, policy-driven network access for visitors and temporary users. Configure portals, sponsor groups, and guest account types to manage the complete guest lifecycle.
-            </div>
+            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>Guest Access provides secure, policy-driven network access for visitors and temporary users.</div>
           </div>
         )}
 
@@ -100,18 +120,25 @@ const WorkCenters = () => {
         {active === 'guest-types' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Users size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Guest Types</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a guest type to view detailed configuration</div>
             <ISETable headers={['Guest Type', 'Max Duration', 'Max Logins', 'Sponsor Required', 'Description']}
-              rows={[
-                ['Contractor', '90 days', '1', 'Yes', 'Long-term contractor access with sponsor approval'],
-                ['Daily', '1 day', '1', 'Yes', 'Single-day guest with sponsor approval'],
-                ['Weekly', '7 days', '1', 'Yes', 'Week-long guest access'],
-                ['Self-Registration', '3 days', '1', 'No', 'Self-registered guest with email verification'],
-                ['Hotspot', '1 day', 'Unlimited', 'No', 'Hotspot access with AUP acceptance only'],
-              ].map(r => r.map((c, i) => i === 0 ? <span className="font-semibold" style={{ color: '#049fd9' }}>{c}</span> : <span style={{ color: i === 4 ? '#666' : '#333' }}>{c}</span>))} />
+              rows={guestTypes.map(gt => {
+                const d = guestTypeDetails[gt];
+                return [
+                  <span className="font-semibold" style={{ color: '#049fd9' }}>{gt}</span>,
+                  <span className="font-mono">{d?.accessDuration || '—'}</span>,
+                  <span className="font-mono">{d?.maxLogins === -1 ? 'Unlimited' : d?.maxLogins || '—'}</span>,
+                  d?.sponsorRequired ? 'Yes' : 'No',
+                  <span style={{ color: '#666' }}>{d?.description || ''}</span>,
+                ];
+              })}
+              onRowClick={(i) => { setSelectedGuestType(guestTypes[i]); setGuestTypeOpen(true); }}
+            />
+            <GuestTypeDetailDialog guestType={selectedGuestType} details={selectedGuestType ? guestTypeDetails[selectedGuestType] || null : null} open={guestTypeOpen} onOpenChange={setGuestTypeOpen} />
           </>
         )}
 
-        {/* BYOD */}
+        {/* ========== BYOD ========== */}
         {active === 'byod-overview' && (
           <div className="space-y-4">
             <div className="flex items-center gap-2"><Smartphone size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>BYOD</span></div>
@@ -120,9 +147,7 @@ const WorkCenters = () => {
               <StatCard label="Pending Registration" value="8" color="#fbab18" />
               <StatCard label="Certificates Issued" value="298" color="#6cc04a" />
             </div>
-            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>
-              BYOD allows employees to register personal devices and receive provisioned certificates and supplicant configurations. The onboarding flow includes device registration, certificate provisioning, and network profile installation.
-            </div>
+            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>BYOD allows employees to register personal devices and receive provisioned certificates.</div>
             <div className="border border-border rounded bg-card p-4">
               <div className="text-xs font-semibold mb-2" style={{ color: '#333' }}>BYOD Onboarding Flow</div>
               <div className="flex items-center gap-2 text-[11px]">
@@ -143,7 +168,7 @@ const WorkCenters = () => {
             <div className="p-4 border border-border rounded bg-card text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div><span style={{ color: '#888' }}>Portal URL:</span> <span className="font-mono">https://mydevices.corp.local:8443</span></div>
-                <div><span style={{ color: '#888' }}>Status:</span> <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Active</span></div>
+                <div><span style={{ color: '#888' }}>Status:</span> <span className="flex items-center gap-1 inline-flex"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Active</span></div>
                 <div><span style={{ color: '#888' }}>Max Devices per User:</span> <span className="font-mono">5</span></div>
                 <div><span style={{ color: '#888' }}>Auto-Approval:</span> <span className="font-mono">Disabled</span></div>
               </div>
@@ -155,26 +180,14 @@ const WorkCenters = () => {
           <div className="space-y-3">
             <div className="flex items-center gap-2 mb-2"><Smartphone size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>BYOD Settings</span></div>
             <div className="border border-border rounded bg-card p-4 space-y-3 text-xs">
-              {[
-                { label: 'BYOD Portal', value: 'Enabled' },
-                { label: 'Certificate Template', value: 'EAP_Authentication_Template' },
-                { label: 'Supplicant Provisioning', value: 'Enabled' },
-                { label: 'Dual-SSID Flow', value: 'Enabled' },
-                { label: 'Provisioning SSID', value: 'Corp-Onboard' },
-                { label: 'Secure SSID', value: 'Corp-Secure' },
-                { label: 'Maximum Devices per User', value: '5' },
-                { label: 'Certificate Validity', value: '365 days' },
-              ].map(s => (
-                <div key={s.label} className="flex items-center">
-                  <span className="w-52 font-medium" style={{ color: '#555' }}>{s.label}</span>
-                  <span className="font-mono" style={{ color: '#333' }}>{s.value}</span>
-                </div>
+              {[{ label: 'BYOD Portal', value: 'Enabled' }, { label: 'Certificate Template', value: 'EAP_Authentication_Template' }, { label: 'Supplicant Provisioning', value: 'Enabled' }, { label: 'Dual-SSID Flow', value: 'Enabled' }, { label: 'Provisioning SSID', value: 'Corp-Onboard' }, { label: 'Secure SSID', value: 'Corp-Secure' }, { label: 'Maximum Devices per User', value: '5' }, { label: 'Certificate Validity', value: '365 days' }].map(s => (
+                <div key={s.label} className="flex items-center"><span className="w-52 font-medium" style={{ color: '#555' }}>{s.label}</span><span className="font-mono" style={{ color: '#333' }}>{s.value}</span></div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Device Administration */}
+        {/* ========== DEVICE ADMINISTRATION ========== */}
         {active === 'devadmin-overview' && (
           <div className="space-y-4">
             <div className="flex items-center gap-2"><Server size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Device Administration (TACACS+)</span></div>
@@ -183,15 +196,13 @@ const WorkCenters = () => {
               <StatCard label="Command Sets" value={String(tacacsCommandSets.length)} color="#6cc04a" />
               <StatCard label="Device Admin Sessions (24h)" value="128" color="#fbab18" />
             </div>
-            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>
-              TACACS+ provides centralized authentication, authorization, and accounting for network device administration. Configure shell profiles, command sets, and device admin policy sets.
-            </div>
           </div>
         )}
 
         {active === 'tacacs-profiles' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Server size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>TACACS+ Shell Profiles</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a profile to view privilege level and custom attributes</div>
             <ISETable headers={['Profile Name', 'Description', 'Protocol', 'Privilege Level', 'Status']}
               rows={tacacsProfiles.map(p => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{p.name}</span>,
@@ -199,20 +210,27 @@ const WorkCenters = () => {
                 <span className="font-mono">{p.protocol}</span>,
                 <span className="font-mono font-bold">{p.privilege}</span>,
                 <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> {p.status}</span>,
-              ])} />
+              ])}
+              onRowClick={(i) => { setSelectedShellProfile(tacacsProfiles[i].name); setShellProfileOpen(true); }}
+            />
+            <ShellProfileDialog profileName={selectedShellProfile} details={selectedShellProfile ? shellProfileDetails[selectedShellProfile] || null : null} open={shellProfileOpen} onOpenChange={setShellProfileOpen} />
           </>
         )}
 
         {active === 'tacacs-commands' && (
           <>
             <div className="flex items-center gap-2 mb-2"><Server size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>TACACS+ Command Sets</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a command set to view permit/deny rules</div>
             <ISETable headers={['Command Set Name', 'Description', 'Commands', 'Status']}
               rows={tacacsCommandSets.map(c => [
                 <span className="font-semibold" style={{ color: '#049fd9' }}>{c.name}</span>,
                 <span style={{ color: '#666' }}>{c.description}</span>,
                 <span className="font-mono text-[11px]" style={{ color: '#666' }}>{c.commands}</span>,
                 <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> {c.status}</span>,
-              ])} />
+              ])}
+              onRowClick={(i) => { setSelectedCommandSet(tacacsCommandSets[i].name); setCommandSetOpen(true); }}
+            />
+            <CommandSetDialog commandSetName={selectedCommandSet} details={selectedCommandSet ? commandSetDetails[selectedCommandSet] || null : null} open={commandSetOpen} onOpenChange={setCommandSetOpen} />
           </>
         )}
 
@@ -236,7 +254,7 @@ const WorkCenters = () => {
           </>
         )}
 
-        {/* Posture */}
+        {/* ========== POSTURE ========== */}
         {active === 'posture-overview' && (
           <div className="space-y-4">
             <div className="flex items-center gap-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Posture Assessment</span></div>
@@ -245,9 +263,7 @@ const WorkCenters = () => {
               <StatCard label="Non-Compliant" value="156" color="#cc0000" />
               <StatCard label="Pending Assessment" value="89" color="#fbab18" />
             </div>
-            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>
-              Posture service checks endpoint compliance before granting full network access. Endpoints that fail posture checks are placed in a remediation VLAN with instructions to bring the device into compliance.
-            </div>
+            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>Posture service checks endpoint compliance before granting full network access.</div>
           </div>
         )}
 
@@ -261,6 +277,53 @@ const WorkCenters = () => {
                 <span className="font-mono text-[11px]" style={{ color: '#666' }}>{p.condition}</span>,
                 <span className="font-mono">{p.remediationAction}</span>,
                 p.status === 'Enabled' ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> Enabled</span> : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#999' }} /> Disabled</span>,
+              ])} />
+          </>
+        )}
+
+        {active === 'posture-conditions' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Posture Conditions</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a condition to view/edit details</div>
+            <ISETable headers={['Name', 'Type', 'OS', 'Attribute', 'Operator', 'Value', 'Description']}
+              rows={postureConditions.map(c => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{c.name}</span>,
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#049fd920', color: '#049fd9' }}>{c.type}</span>,
+                c.os,
+                <span className="font-mono text-[11px]">{c.attribute}</span>,
+                c.operator,
+                <span className="font-mono">{c.value || '—'}</span>,
+                <span style={{ color: '#666' }}>{c.description}</span>,
+              ])}
+              onRowClick={(i) => { setSelectedCondition(postureConditions[i]); setConditionOpen(true); }}
+            />
+            <PostureConditionDialog condition={selectedCondition} open={conditionOpen} onOpenChange={setConditionOpen} />
+          </>
+        )}
+
+        {active === 'posture-requirements' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Posture Requirements</span></div>
+            <ISETable headers={['Requirement Name', 'OS', 'Conditions', 'Remediation', 'Grace Period']}
+              rows={postureRequirements.map(r => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{r.name}</span>,
+                r.os,
+                <span className="font-mono text-[11px]" style={{ color: '#666' }}>{r.conditions.join(', ')}</span>,
+                <span className="font-mono">{r.remediation}</span>,
+                <span className="font-mono">{r.gracePeriod}</span>,
+              ])} />
+          </>
+        )}
+
+        {active === 'posture-remediation' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Remediation Actions</span></div>
+            <ISETable headers={['Name', 'Type', 'Action', 'Instructions']}
+              rows={postureRemediations.map(r => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{r.name}</span>,
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#049fd920', color: '#049fd9' }}>{r.type}</span>,
+                <span style={{ color: '#666' }}>{r.action}</span>,
+                <span className="text-[11px]" style={{ color: '#888' }}>{r.instructions}</span>,
               ])} />
           </>
         )}
@@ -279,18 +342,16 @@ const WorkCenters = () => {
           </>
         )}
 
-        {/* TrustSec */}
+        {/* ========== TRUSTSEC ========== */}
         {active === 'trustsec-overview' && (
           <div className="space-y-4">
             <div className="flex items-center gap-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>TrustSec (Software-Defined Segmentation)</span></div>
             <div className="grid grid-cols-3 gap-4">
               <StatCard label="Security Groups" value={String(securityGroups.length)} color="#049fd9" />
               <StatCard label="SGT-Tagged Endpoints" value="2,847" color="#6cc04a" />
-              <StatCard label="Egress Policies" value="15" color="#fbab18" />
+              <StatCard label="SXP Peers" value={String(sxpDevices.length)} color="#fbab18" />
             </div>
-            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>
-              Cisco TrustSec enables software-defined segmentation across your network using Security Group Tags (SGTs). Assign SGTs at authentication, then enforce segmentation policies at egress points.
-            </div>
+            <div className="text-xs p-3 border border-border rounded bg-card" style={{ color: '#666' }}>Cisco TrustSec enables software-defined segmentation using Security Group Tags (SGTs).</div>
           </div>
         )}
 
@@ -314,28 +375,16 @@ const WorkCenters = () => {
             <div className="text-xs mb-2" style={{ color: '#666' }}>Define which source SGTs can communicate with destination SGTs</div>
             <div className="border border-border rounded overflow-auto bg-card p-2">
               <table className="w-full text-[10px]">
-                <thead>
-                  <tr>
-                    <th className="p-1 font-semibold text-left" style={{ color: '#555' }}>Source ↓ / Dest →</th>
-                    {['Employees', 'Guests', 'Servers', 'IOT', 'Quarantine'].map(h => <th key={h} className="p-1 font-semibold" style={{ color: '#555' }}>{h}</th>)}
+                <thead><tr><th className="p-1 font-semibold text-left" style={{ color: '#555' }}>Source ↓ / Dest →</th>{['Employees', 'Guests', 'Servers', 'IOT', 'Quarantine'].map(h => <th key={h} className="p-1 font-semibold" style={{ color: '#555' }}>{h}</th>)}</tr></thead>
+                <tbody>{['Employees', 'Guests', 'Contractors', 'BYOD', 'IOT'].map((src, i) => (
+                  <tr key={src} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                    <td className="p-1 font-semibold" style={{ color: '#333' }}>{src}</td>
+                    {[0,1,2,3,4].map(j => {
+                      const allowed = !((src === 'Guests' && j === 2) || (src === 'IOT' && j === 2) || j === 4);
+                      return <td key={j} className="p-1 text-center">{allowed ? <span className="px-1 py-0.5 rounded" style={{ background: '#6cc04a20', color: '#3d7a2a' }}>Permit</span> : <span className="px-1 py-0.5 rounded" style={{ background: '#cc000020', color: '#cc0000' }}>Deny</span>}</td>;
+                    })}
                   </tr>
-                </thead>
-                <tbody>
-                  {['Employees', 'Guests', 'Contractors', 'BYOD', 'IOT'].map((src, i) => (
-                    <tr key={src} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
-                      <td className="p-1 font-semibold" style={{ color: '#333' }}>{src}</td>
-                      {[0,1,2,3,4].map(j => {
-                        const allowed = !((src === 'Guests' && j === 2) || (src === 'IOT' && j === 2) || j === 4);
-                        return <td key={j} className="p-1 text-center">
-                          {allowed
-                            ? <span className="px-1 py-0.5 rounded" style={{ background: '#6cc04a20', color: '#3d7a2a' }}>Permit</span>
-                            : <span className="px-1 py-0.5 rounded" style={{ background: '#cc000020', color: '#cc0000' }}>Deny</span>
-                          }
-                        </td>;
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
+                ))}</tbody>
               </table>
             </div>
           </>
@@ -355,7 +404,26 @@ const WorkCenters = () => {
           </>
         )}
 
-        {/* Network Access */}
+        {active === 'sxp-devices' && (
+          <>
+            <div className="flex items-center gap-2 mb-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>SXP Devices</span></div>
+            <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click an SXP peer to view connection details</div>
+            <ISETable headers={['Device Name', 'IP Address', 'SXP Mode', 'Peer IP', 'Status', 'Domain']}
+              rows={sxpDevices.map(d => [
+                <span className="font-semibold" style={{ color: '#049fd9' }}>{d.name}</span>,
+                <span className="font-mono">{d.ip}</span>,
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#049fd920', color: '#049fd9' }}>{d.mode}</span>,
+                <span className="font-mono">{d.peerIp}</span>,
+                d.status === 'On' ? <span className="flex items-center gap-1"><CheckCircle size={12} style={{ color: '#6cc04a' }} /> On</span> : <span className="flex items-center gap-1"><XCircle size={12} style={{ color: '#cc0000' }} /> Off</span>,
+                d.domain,
+              ])}
+              onRowClick={(i) => { setSelectedSXP(sxpDevices[i]); setSxpOpen(true); }}
+            />
+            <SXPDeviceDialog device={selectedSXP} open={sxpOpen} onOpenChange={setSxpOpen} />
+          </>
+        )}
+
+        {/* ========== NETWORK ACCESS ========== */}
         {active === 'netaccess-overview' && (
           <div className="space-y-4">
             <div className="flex items-center gap-2"><Wifi size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Network Access</span></div>
@@ -393,12 +461,12 @@ const StatCard = ({ label, value, color }: { label: string; value: string; color
   </div>
 );
 
-const ISETable = ({ headers, rows }: { headers: string[]; rows: React.ReactNode[][] }) => (
+const ISETable = ({ headers, rows, onRowClick }: { headers: string[]; rows: React.ReactNode[][]; onRowClick?: (i: number) => void }) => (
   <div className="border border-border rounded overflow-auto bg-card">
     <table className="w-full text-xs">
       <thead><tr style={{ background: '#f0f0f0' }}>{headers.map(h => <th key={h} className="text-left p-2 font-semibold" style={{ color: '#555' }}>{h}</th>)}</tr></thead>
       <tbody>{rows.map((row, i) => (
-        <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className="hover:bg-accent/60">
+        <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }} className={`hover:bg-accent/60 ${onRowClick ? 'cursor-pointer' : ''}`} onClick={() => onRowClick?.(i)}>
           {row.map((cell, j) => <td key={j} className="p-2">{cell}</td>)}
         </tr>
       ))}</tbody>
