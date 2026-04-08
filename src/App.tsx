@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import ContextVisibility from "./pages/ContextVisibility";
 import Operations from "./pages/Operations";
 import Policy from "./pages/Policy";
+import WorkCenters from "./pages/WorkCenters";
 import Administration from "./pages/Administration";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
               <Route path="/context-visibility" element={<ContextVisibility />} />
               <Route path="/operations" element={<Operations />} />
               <Route path="/policy" element={<Policy />} />
+              <Route path="/work-centers" element={<WorkCenters />} />
               <Route path="/administration" element={<Administration />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
