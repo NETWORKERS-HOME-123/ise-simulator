@@ -96,7 +96,7 @@ const Policy = () => {
 
         {active === 'authz-profiles' && (
           <>
-            <div className="flex items-center gap-2 mb-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Authorization Profiles</span></div>
+            <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><Shield size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Authorization Profiles</span></div><button data-walkthrough="add-profile-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>+ Add Profile</button></div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Policy &gt; Policy Elements &gt; Results &gt; Authorization &gt; Authorization Profiles. Click a profile to view Common Tasks and RADIUS attributes.</div>
             <Table headers={['Name', 'Type', 'Description', 'Access Type', 'VLAN', 'DACL']}
               rows={authorizationProfiles.map(p => [
