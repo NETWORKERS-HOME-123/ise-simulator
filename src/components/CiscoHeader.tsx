@@ -6,6 +6,7 @@ const navTabs = [
   { label: "Context Visibility", path: "/context-visibility" },
   { label: "Operations", path: "/operations" },
   { label: "Policy", path: "/policy" },
+  { label: "Work Centers", path: "/work-centers" },
   { label: "Administration", path: "/administration" },
 ];
 

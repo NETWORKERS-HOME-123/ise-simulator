@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import ContextVisibility from "./pages/ContextVisibility";
 import Operations from "./pages/Operations";
 import Policy from "./pages/Policy";
+import WorkCenters from "./pages/WorkCenters";
 import Administration from "./pages/Administration";
 import NotFound from "./pages/NotFound";
 
