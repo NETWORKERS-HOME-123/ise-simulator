@@ -73,15 +73,60 @@ const Administration = () => {
   const [addAdminOpen, setAddAdminOpen] = useState(false);
   const [addDeviceOpen, setAddDeviceOpen] = useState(false);
   const [addUserOpen, setAddUserOpen] = useState(false);
-  const [selectedDevice, setSelectedDevice] = useState<typeof networkDevices[0] | null>(null);
+  const [selectedDevice, setSelectedDevice] = useState<any>(null);
   const [deviceDetailOpen, setDeviceDetailOpen] = useState(false);
   const [selectedCert, setSelectedCert] = useState<typeof systemCertificates[0] | null>(null);
   const [certDetailOpen, setCertDetailOpen] = useState(false);
-  const [selectedInternalUser, setSelectedInternalUser] = useState<typeof internalUsers[0] | null>(null);
+  const [selectedInternalUser, setSelectedInternalUser] = useState<any>(null);
   const [internalUserOpen, setInternalUserOpen] = useState(false);
   const [selectedAdminUser, setSelectedAdminUser] = useState<typeof adminUsers[0] | null>(null);
   const [adminUserOpen, setAdminUserOpen] = useState(false);
   const [licenseDetailOpen, setLicenseDetailOpen] = useState(false);
+  // Add Device form state
+  const [newDeviceName, setNewDeviceName] = useState('');
+  const [newDeviceIP, setNewDeviceIP] = useState('');
+  const [newDeviceSecret, setNewDeviceSecret] = useState('');
+  const [newDeviceProfile, setNewDeviceProfile] = useState('Cisco');
+  const [newDeviceType, setNewDeviceType] = useState('Switch');
+  const [newDeviceLocation, setNewDeviceLocation] = useState('Building A');
+  // Add User form state
+  const [newUsername, setNewUsername] = useState('');
+  const [newFirstName, setNewFirstName] = useState('');
+  const [newLastName, setNewLastName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newIdentityGroup, setNewIdentityGroup] = useState('Employee');
+
+  const handleAddDevice = () => {
+    if (!newDeviceName.trim() || !newDeviceIP.trim()) { toast.error('Device name and IP are required'); return; }
+    sim.addNetworkDevice({
+      name: newDeviceName,
+      ip: newDeviceIP,
+      type: newDeviceType,
+      location: newDeviceLocation,
+      profile: newDeviceProfile,
+      status: 'Enabled',
+      tacacs: false,
+      sharedSecret: newDeviceSecret || '••••••••',
+    } as any);
+    setAddDeviceOpen(false);
+    setNewDeviceName(''); setNewDeviceIP(''); setNewDeviceSecret('');
+  };
+
+  const handleAddUser = () => {
+    if (!newUsername.trim()) { toast.error('Username is required'); return; }
+    sim.addInternalUser({
+      name: newUsername,
+      firstName: newFirstName || newUsername,
+      lastName: newLastName || '',
+      email: newEmail || `${newUsername}@corp.local`,
+      identityGroup: newIdentityGroup,
+      status: 'Enabled',
+      lastPasswordChange: new Date().toISOString().split('T')[0],
+    } as any);
+    setAddUserOpen(false);
+    setNewUsername(''); setNewFirstName(''); setNewLastName(''); setNewEmail(''); setNewPassword('');
+  };
 
   const getSectionLabel = () => {
     const section = sections.find(s => s.items.some(i => i.key === active));
