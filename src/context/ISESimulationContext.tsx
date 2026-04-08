@@ -100,26 +100,26 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   // Generic CRUD helpers
-  const addEntity = <T extends { id: number }>(key: keyof SimState, entity: Omit<T, 'id'>, label: string) => {
+  const addEntity = (key: keyof SimState, entity: any, label: string) => {
     setState(s => {
-      const arr = s[key] as T[];
-      const newItem = { ...entity, id: nextId(arr) } as T;
+      const arr = s[key] as any[];
+      const newItem = { ...entity, id: nextId(arr) };
       toast.success(`${label} created successfully`);
       return { ...s, [key]: [...arr, newItem], simulationLogs: [{ time: new Date().toISOString(), action: `Created ${label}`, detail: JSON.stringify(entity).slice(0, 100) }, ...s.simulationLogs].slice(0, 200) };
     });
   };
 
-  const deleteEntity = <T extends { id: number }>(key: keyof SimState, id: number, label: string) => {
+  const deleteEntity = (key: keyof SimState, id: number, label: string) => {
     setState(s => {
       toast.success(`${label} deleted`);
-      return { ...s, [key]: (s[key] as T[]).filter(e => e.id !== id), simulationLogs: [{ time: new Date().toISOString(), action: `Deleted ${label}`, detail: `ID: ${id}` }, ...s.simulationLogs].slice(0, 200) };
+      return { ...s, [key]: (s[key] as any[]).filter((e: any) => e.id !== id), simulationLogs: [{ time: new Date().toISOString(), action: `Deleted ${label}`, detail: `ID: ${id}` }, ...s.simulationLogs].slice(0, 200) };
     });
   };
 
-  const updateEntity = <T extends { id: number }>(key: keyof SimState, id: number, updates: Partial<T>, label: string) => {
+  const updateEntity = (key: keyof SimState, id: number, updates: any, label: string) => {
     setState(s => {
       toast.success(`${label} updated`);
-      return { ...s, [key]: (s[key] as T[]).map(e => e.id === id ? { ...e, ...updates } : e), simulationLogs: [{ time: new Date().toISOString(), action: `Updated ${label}`, detail: `ID: ${id}` }, ...s.simulationLogs].slice(0, 200) };
+      return { ...s, [key]: (s[key] as any[]).map((e: any) => e.id === id ? { ...e, ...updates } : e), simulationLogs: [{ time: new Date().toISOString(), action: `Updated ${label}`, detail: `ID: ${id}` }, ...s.simulationLogs].slice(0, 200) };
     });
   };
 
