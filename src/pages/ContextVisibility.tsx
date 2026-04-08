@@ -92,7 +92,7 @@ const ContextVisibility = () => {
 
       <div className="text-[10px] mb-1" style={{ color: '#888' }}>Right-click rows for actions • Click to view details • Checkbox to bulk select</div>
 
-      <div className="border border-border rounded overflow-auto bg-card">
+      <div data-walkthrough="endpoint-table" className="border border-border rounded overflow-auto bg-card">
         <table className="w-full text-xs">
           <thead>
             <tr style={{ background: '#f0f0f0' }}>

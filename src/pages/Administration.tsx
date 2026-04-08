@@ -546,7 +546,7 @@ const Administration = () => {
           <>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2"><UserCheck size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Internal Users</span></div>
-              <button className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddUserOpen(true)}>+ Add User</button>
+              <button data-walkthrough="add-user-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }} onClick={() => setAddUserOpen(true)}>+ Add User</button>
             </div>
             <div className="text-[10px] mb-1" style={{ color: '#888' }}>Click a user to edit details and custom attributes</div>
             <ISETable headers={['Username', 'First Name', 'Last Name', 'Email', 'Identity Group', 'Status', 'Last Password Change']}

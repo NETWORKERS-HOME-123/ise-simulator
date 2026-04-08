@@ -266,7 +266,7 @@ const Operations = () => {
                 <div><label className="block mb-1" style={{ color: '#555' }}>NAS IP Address</label><input className="w-full border border-border rounded px-2 py-1 text-xs bg-card" defaultValue="10.1.100.1" /></div>
                 <div><label className="block mb-1" style={{ color: '#555' }}>Policy Server</label><select className="w-full border border-border rounded px-2 py-1 text-xs bg-card"><option>ise-psn01</option><option>ise-psn02</option></select></div>
               </div>
-              <button className="mt-3 text-xs px-4 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>Run Test</button>
+              <button data-walkthrough="run-auth-test" className="mt-3 text-xs px-4 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>Run Test</button>
             </div>
           </div>
         </div>

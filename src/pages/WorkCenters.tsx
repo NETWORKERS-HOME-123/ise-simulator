@@ -508,7 +508,7 @@ const WorkCenters = () => {
 
         {active === 'security-groups' && (
           <>
-            <div className="flex items-center gap-2 mb-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Security Groups (SGTs)</span></div>
+            <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><Lock size={16} style={{ color: '#049fd9' }} /><span className="text-sm font-semibold" style={{ color: '#333' }}>Security Groups (SGTs)</span></div><button data-walkthrough="add-sgt-btn" className="text-xs px-3 py-1.5 rounded text-white" style={{ background: '#049fd9' }}>+ Add SGT</button></div>
             <ISETable headers={['', 'Name', 'SGT Value', 'Description', 'Learned']}
               rows={securityGroups.map(g => [
                 <span className="text-lg">{g.icon}</span>,
